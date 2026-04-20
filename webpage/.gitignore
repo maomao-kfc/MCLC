@@ -36,3 +36,11 @@ dist-ssr
 # Cache
 .cache
 .temp
+
+# 忽略视频文件夹
+src/assets/videos/
+# 或者忽略所有视频文件
+*.mp4
+*.mov
+*.avi
+*.mkv

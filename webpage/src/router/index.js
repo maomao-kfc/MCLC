@@ -11,7 +11,7 @@ import Schedule from '@/pages/Schedule.vue'
 import Hotel from '@/pages/Hotel.vue'
 import Faq from '@/pages/Faq.vue'
 import PreMeeting from '@/pages/PreMeeting.vue'
-// 新增：引入文章页面
+//引入文章页面
 import ArticleList from '@/pages/ArticleList.vue'
 import ArticleDetail from '@/pages/ArticleDetail.vue'
 
@@ -80,14 +80,14 @@ const routes = [{
 			title: '参会注册'
 		}
 	},
-	{
-		path: '/login',
-		name: 'Login',
-		component: () => import('@/pages/Login.vue'),
-		meta: {
-			title: '用户登录'
-		}
-	},
+	// {
+	// 	path: '/login',
+	// 	name: 'Login',
+	// 	component: () => import('@/pages/Login.vue'),
+	// 	meta: {
+	// 		title: '用户登录'
+	// 	}
+	// },
 	{
 		path: '/article',
 		name: 'ArticleList',
@@ -96,7 +96,7 @@ const routes = [{
 			title: '嘉宾演讲集锦 | MCLC 2026'
 		}
 	},
-	// 新增：文章详情页动态路由
+	//文章详情页动态路由
 	{
 		path: '/article/:id',
 		name: 'ArticleDetail',
