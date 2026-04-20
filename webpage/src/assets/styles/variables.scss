@@ -1,0 +1,54 @@
+// ==================== 主题色配置 ====================
+$primary-blue: #114C9A;
+$primary-purple: #7952b3;
+$primary-purple-light: #9d75d6;
+$success-color: #00b97a;
+$warning-color: #f7931e;
+$danger-color: #ff0000;
+$info-color: #00a0e9;
+
+// ==================== 中性色配置 ====================
+$white: #ffffff;
+$bg-color: #F7F7F7;
+$border-color: #dee2e6;
+$border-color-light: #eee;
+$text-main: #333333;
+$text-secondary: #666666;
+$text-placeholder: #999999;
+$text-disabled: #bdc3c7;
+$footer-bg: #4A516E;
+
+// ==================== 字体配置 ====================
+$font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-base: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 22px;
+$font-size-3xl: 28px;
+$font-size-4xl: 42px;
+
+// ==================== 圆角配置 ====================
+$border-radius-sm: 4px;
+$border-radius-base: 8px;
+$border-radius-lg: 12px;
+$border-radius-full: 50%;
+
+// ==================== 间距配置 ====================
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-base: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 20px;
+$spacing-2xl: 24px;
+$spacing-3xl: 30px;
+$spacing-4xl: 40px;
+
+// ==================== 阴影配置 ====================
+$card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+// ==================== 响应式断点 ====================
+$breakpoint-xs: 576px;
+$breakpoint-md: 992px;
+$breakpoint-lg: 1300px;

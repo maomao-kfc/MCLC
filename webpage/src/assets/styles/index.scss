@@ -1,0 +1,123 @@
+/* 全局样式入口 */
+// ==================== 所有@use必须集中在文件最顶部！！！ ====================
+@use './variables.scss' as *;
+@use './reset.scss';
+
+// ==================== 下面才能写CSS规则 ====================
+// 把Sass变量转成CSS全局变量，所有样式、组件都能直接用
+:root {
+  --primary-blue: #{$primary-blue};
+  --primary-purple: #{$primary-purple};
+  --primary-purple-light: #{$primary-purple-light};
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --danger-color: #{$danger-color};
+  --info-color: #{$info-color};
+  --white: #{$white};
+  --bg-color: #{$bg-color};
+  --border-color: #{$border-color};
+  --border-color-light: #{$border-color-light};
+  --text-main: #{$text-main};
+  --text-secondary: #{$text-secondary};
+  --text-placeholder: #{$text-placeholder};
+  --text-disabled: #{$text-disabled};
+  --footer-bg: #{$footer-bg};
+  --font-family: #{$font-family};
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-base: #{$font-size-base};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+  --font-size-3xl: #{$font-size-3xl};
+  --font-size-4xl: #{$font-size-4xl};
+  --border-radius-sm: #{$border-radius-sm};
+  --border-radius-base: #{$border-radius-base};
+  --border-radius-lg: #{$border-radius-lg};
+  --border-radius-full: #{$border-radius-full};
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-base: #{$spacing-base};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  --spacing-2xl: #{$spacing-2xl};
+  --spacing-3xl: #{$spacing-3xl};
+  --spacing-4xl: #{$spacing-4xl};
+  --card-shadow: #{$card-shadow};
+  --breakpoint-xs: #{$breakpoint-xs};
+  --breakpoint-md: #{$breakpoint-md};
+  --breakpoint-lg: #{$breakpoint-lg};
+}
+
+// ==================== 全局通用工具类 ====================
+.text-red {
+  color: var(--danger-color);
+  font-weight: 500;
+}
+.text-primary {
+  color: var(--primary-blue);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.flex-column { display: flex; flex-direction: column; }
+.flex-1 { flex: 1; }
+.flex-shrink-0 { flex-shrink: 0; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-lg); }
+.mt-3 { margin-top: var(--spacing-xl); }
+.mt-4 { margin-top: var(--spacing-2xl); }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-lg); }
+.mb-3 { margin-bottom: var(--spacing-xl); }
+.mb-4 { margin-bottom: var(--spacing-2xl); }
+
+.w-full { width: 100%; }
+.min-w-0 { min-width: 0; }
+
+.rounded-sm { border-radius: var(--border-radius-sm); }
+.rounded { border-radius: var(--border-radius-base); }
+.rounded-lg { border-radius: var(--border-radius-lg); }
+.rounded-full { border-radius: var(--border-radius-full); }
+
+// ==================== 项目全局通用样式 ====================
+.common-card {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+  width: 100%;
+}
+.page-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary-blue), var(--primary-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+.section-title {
+  font-size: var(--font-size-2xl);
+  color: var(--primary-purple);
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: var(--spacing-3xl);
+}
