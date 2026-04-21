@@ -1,5 +1,6 @@
 import type { App } from "vue";
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-router";
+import hotelRoutes from "./modules/hotel";
 
 export const Layout = () => import("@/layouts/index.vue");
 

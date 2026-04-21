@@ -1,6 +1,13 @@
 server:
   port: 8000
 
+redisson:
+  single-server-config:
+    address: redis://192.168.168.130:6379
+    password: redisshzh2024
+    database: 12
+    timeout: 10000
+
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
