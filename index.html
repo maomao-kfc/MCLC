@@ -2,7 +2,8 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title></title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>散文</title>
 	</head>
 	<body>
 		<div class="article">
@@ -47,55 +48,87 @@
 	</body>
 </html>
 <style>
-	/* 页面背景 */
-	body {
-		background-color: #f5f0e8;
-		/* 柔和米色，仿旧书页 */
-		display: flex;
-		justify-content: center;
-		padding: 40px 20px;
-		margin: 0;
-	}
+    /* ========== 全局 ========== */
+    body {
+        background-color: #f5f0e8;
+        margin: 0;
+        padding: 2rem 1rem;           /* 使用 rem 让间距随根字体缩放 */
+        display: flex;
+        justify-content: center;
+    }
 
-	/* 文章卡片 */
-	.article {
-		max-width: 720px;
-		/* 舒适阅读宽度 */
-		width: 100%;
-		background: #fffef9;
-		/* 微微泛白的纸色 */
-		padding: 60px 50px;
-		border-radius: 4px;
-		box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
-		font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", "宋体", Georgia, serif;
-		color: #3a3a3a;
-	}
+    /* ========== 文章卡片 ========== */
+    .article {
+        max-width: 720px;
+        width: 100%;
+        background: #fffef9;
+        padding: 3rem 2.5rem;         /* 原 60px 50px → 相对单位 */
+        border-radius: 4px;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+        font-family: "Noto Serif SC", "Songti SC", "SimSun", "宋体", Georgia, serif;
+        color: #3a3a3a;
+        line-height: 2;               /* 统一行高，继承到段落 */
+    }
 
-	/* 标题 */
-	.article h1 {
-		text-align: center;
-		font-size: 2.4em;
-		font-weight: 700;
-		margin: 0 0 40px 0;
-		letter-spacing: 0.1em;
-		color: #2c2c2c;
-	}
+    /* ========== 标题 ========== */
+    .article h1 {
+        text-align: center;
+        font-size: 2.4rem;            /* 相对单位 */
+        font-weight: 700;
+        margin: 0 0 2.5rem 0;
+        letter-spacing: 0.1em;
+        color: #2c2c2c;
+    }
 
-	/* 段落 */
-	.article p {
-		margin: 0 0 1.2em 0;
-		/* 段间距 */
-		text-indent: 2em;
-		/* 首行缩进（中文文章标配） */
-		line-height: 2;
-		/* 舒适的行高 */
-		font-size: 1.05em;
-		word-break: break-all;
-		/* 避免长字符串溢出 */
-	}
+    /* ========== 段落 ========== */
+    .article p {
+        margin: 0 0 1.2em 0;
+        text-indent: 2em;
+        font-size: 1.05rem;
+        word-break: break-word;       /* 更安全的换行 */
+        overflow-wrap: break-word;
+    }
 
-	/* 最后一段不需要底部间距（可选） */
-	.article p:last-child {
-		margin-bottom: 0;
-	}
+    .article p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* ========== 响应式：平板及以下 ========== */
+    @media (max-width: 768px) {
+        body {
+            padding: 1rem 0.5rem;
+        }
+        .article {
+            padding: 2rem 1.5rem;
+        }
+        .article h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1.8rem;
+        }
+        .article p {
+            font-size: 1rem;
+            text-indent: 1.5em;
+        }
+    }
+
+    /* ========== 响应式：手机 ========== */
+    @media (max-width: 480px) {
+        body {
+            padding: 0.5rem;          /* 极窄屏幕减少外边距 */
+        }
+        .article {
+            padding: 1.5rem 1rem;
+            box-shadow: none;         /* 手机上去掉阴影，更干净 */
+            border-radius: 0;
+        }
+        .article h1 {
+            font-size: 1.6rem;
+            margin-bottom: 1.5rem;
+        }
+        .article p {
+            font-size: 0.95rem;
+            text-indent: 1.2em;
+            line-height: 1.9;
+        }
+    }
 </style>
