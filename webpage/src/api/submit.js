@@ -14,18 +14,38 @@ export const submitPaper = (data) => {
   })
 }
 
-// 2. 获取当前用户的稿件列表
-export const getPaperList = () => {
+// 2. 发送投稿查询验证码
+export const sendQueryCode = (email) => {
   return request({
-    url: '/api/paper/list', // 替换为你的后端真实接口地址
-    method: 'GET'
+    url: '/api/v1/paperSubmission/query/sendCode',
+    method: 'POST',
+    params: { email }
   })
 }
 
-// 3. 获取稿件详情（可选扩展）
-export const getPaperDetail = (paperId) => {
+// 3. 按邮箱查询投稿列表（需验证码）
+export const queryPapersByEmail = (email, code) => {
   return request({
-    url: `/api/paper/detail/${paperId}`,
-    method: 'GET'
+    url: '/api/v1/paperSubmission/query/byEmail',
+    method: 'GET',
+    params: { email, code }
+  })
+}
+
+// 4. 查询投稿详情
+export const getPaperDetail = (id, email) => {
+  return request({
+    url: '/api/v1/paperSubmission/query/detail',
+    method: 'GET',
+    params: { id, email }
+  })
+}
+
+// 5. 投稿者修改投稿信息（仅待审核状态可修改）
+export const updatePaperBySubmitter = (data) => {
+  return request({
+    url: '/api/v1/paperSubmission/query/update',
+    method: 'PUT',
+    data
   })
 }

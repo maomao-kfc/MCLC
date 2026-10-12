@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youlai.boot.portal.mapper.MeetingAgendaItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.youlai.boot.portal.model.entity.MeetingAgendaItem">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="sessionId" column="session_id" jdbcType="BIGINT"/>
+            <result property="timeRange" column="time_range" jdbcType="VARCHAR"/>
+            <result property="type" column="type" jdbcType="VARCHAR"/>
+            <result property="typeEn" column="type_en" jdbcType="VARCHAR"/>
+            <result property="topic" column="topic" jdbcType="VARCHAR"/>
+            <result property="topicEn" column="topic_en" jdbcType="VARCHAR"/>
+            <result property="itemType" column="item_type" jdbcType="VARCHAR"/>
+            <result property="speakerId" column="speaker_id" jdbcType="BIGINT"/>
+            <result property="speakerName" column="speaker_name" jdbcType="VARCHAR"/>
+            <result property="speakerNameEn" column="speaker_name_en" jdbcType="VARCHAR"/>
+            <result property="speakerOrg" column="speaker_org" jdbcType="VARCHAR"/>
+            <result property="speakerOrgEn" column="speaker_org_en" jdbcType="VARCHAR"/>
+            <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+            <result property="isBreak" column="is_break" jdbcType="TINYINT"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="AgendItemVOMap" type="com.youlai.boot.portal.model.vo.AgendaItemVO">
+        <id column="id" property="id" />
+        <result column="time_range" property="time" />
+        <result column="type" property="type" />
+        <result column="type_en" property="typeEn" />
+        <result column="topic" property="topic" />
+        <result column="topic_en" property="topicEn" />
+        <result column="item_type" property="itemType" />
+        <result column="is_break" property="isSpecial" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="speaker_id" property="speakerId" />
+        <result column="speaker_name" property="speaker" />
+        <result column="speaker_name_en" property="speakerEn" />
+        <result column="affiliation" property="affiliation" />
+        <result column="affiliation_en" property="affiliationEn" />
+    </resultMap>
+
+    <select id="selectItemsWithSpeakerBySessionId" resultMap="AgendItemVOMap">
+        select
+            i.id,
+            i.time_range,
+            i.type,
+            i.type_en,
+            i.topic,
+            i.topic_en,
+            i.item_type,
+            i.is_break,
+            i.sort_order,
+            i.speaker_id,
+            COALESCE(i.speaker_name, s.name) AS speaker_name,
+            COALESCE(i.speaker_name_en, s.name_en) AS speaker_name_en,
+            COALESCE(i.speaker_org, s.affiliation) AS affiliation,
+            COALESCE(i.speaker_org_en, s.affiliation_en) AS affiliation_en
+        from meeting_agenda_item i
+        left join meeting_speaker s on i.speaker_id = s.id
+        where i.session_id = #{sessionId}
+        order by i.sort_order asc
+    </select>
+
+<!--    <sql id="Base_Column_List">-->
+<!--        id,session_id,time_range,-->
+<!--        type,topic,speaker_id,-->
+<!--        sort_order,is_break,create_time,-->
+<!--        update_time-->
+<!--    </sql>-->
+</mapper>

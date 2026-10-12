@@ -7,6 +7,7 @@
         <CommandPalette />
       </div>
 
+
       <!-- 全屏 -->
       <div class="navbar-actions__item">
         <Fullscreen />
@@ -33,6 +34,10 @@
       </div>
     </template>
 
+    <!-- 扫一扫 -->
+    <div class="navbar-actions__item">
+      <Sweep />
+    </div>
     <!-- 用户菜单 -->
     <div class="navbar-actions__item">
       <el-dropdown trigger="click">
@@ -75,6 +80,7 @@ import { useAppStore, useSettingsStore, useUserStore } from "@/store";
 
 // 导入子组件
 import CommandPalette from "@/components/CommandPalette/index.vue";
+import Sweep from "@/components/Sweep/index.vue";
 import Fullscreen from "@/components/Fullscreen/index.vue";
 import SizeSelect from "@/components/SizeSelect/index.vue";
 import LangSelect from "@/components/LangSelect/index.vue";

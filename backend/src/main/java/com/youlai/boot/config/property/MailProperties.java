@@ -75,12 +75,27 @@ public class MailProperties {
              */
             private StartTls starttls = new StartTls();
 
+            /**
+             * SSL 加密配置选项。
+             */
+            private Ssl ssl = new Ssl();
+
             @Data
             public static class StartTls {
 
                 /**
                  * 是否启用 STARTTLS 加密。
                  * 如果为 `true`，在发送邮件时将启用 STARTTLS 协议进行加密传输。
+                 */
+                private boolean enable;
+            }
+
+            @Data
+            public static class Ssl {
+
+                /**
+                 * 是否启用 SSL 加密。
+                 * 如果为 `true`，在发送邮件时将启用 SSL 协议进行加密传输（适用于端口 465）。
                  */
                 private boolean enable;
             }

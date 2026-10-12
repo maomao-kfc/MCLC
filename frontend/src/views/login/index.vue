@@ -14,36 +14,6 @@
     </div>
 
     <div class="auth-view__wrapper">
-      <!-- 可选：左侧产品介绍区域，如不需要可整段删除，右侧登录表单会自动居中展示 -->
-      <section class="auth-feature">
-        <div class="auth-feature__badge">
-          <span class="auth-feature__dot" />
-          Enterprise Ready
-        </div>
-        <h1 class="auth-feature__title">企业级管理系统</h1>
-        <p class="auth-feature__subtitle">
-          提供安全、高效、可扩展的管理解决方案，助力企业数字化转型与业务增长。
-        </p>
-        <ul class="auth-feature__highlights">
-          <li>
-            <span>✓</span>
-            统一身份认证与权限管理
-          </li>
-          <li>
-            <span>✓</span>
-            支持多租户模式与租户隔离
-          </li>
-          <li>
-            <span>✓</span>
-            数据安全与操作审计
-          </li>
-          <li>
-            <span>✓</span>
-            灵活扩展与高可用架构
-          </li>
-        </ul>
-      </section>
-
       <section class="auth-panel">
         <div class="auth-panel__brand">
           <div class="auth-panel__logo-wrap">
@@ -53,28 +23,11 @@
             <div class="auth-panel__title-row">
               <span class="auth-panel__title">{{ appConfig.title }}</span>
             </div>
-            <div v-if="appConfig.version || tenantEnabled" class="auth-panel__version-row">
-              <el-text size="small" type="info">VERSION</el-text>
-              <el-tag v-if="appConfig.version" size="small" effect="light" round>
-                {{ `v${appConfig.version}` }}
-              </el-tag>
-              <el-tag v-if="tenantEnabled" type="success" size="small" effect="light" round>
-                多租户
-              </el-tag>
-            </div>
           </div>
         </div>
-
         <transition name="fade-slide" mode="out-in">
           <component :is="formComponents[component]" v-model="component" class="auth-panel__form" />
         </transition>
-
-        <footer class="auth-panel__footer">
-          <el-text size="small">
-            Copyright © 2021 - 2025 youlai.tech
-            <a href="http://beian.miit.gov.cn/" target="_blank">皖ICP备00064962号</a>
-          </el-text>
-        </footer>
       </section>
     </div>
   </div>
@@ -88,7 +41,13 @@ import ThemeSwitch from "@/components/ThemeSwitch/index.vue";
 type LayoutMap = "login" | "register" | "resetPwd";
 
 const { t } = useI18n();
+const route = useRoute();
 const component = ref<LayoutMap>("login");
+
+const typeStatus = route.query.typeStatus as string;
+if (typeStatus === "1" || typeStatus === "2") {
+  component.value = "register";
+}
 
 const tenantEnabled = appConfig.tenantEnabled;
 
@@ -193,6 +152,9 @@ const formComponents = {
   gap: clamp(1.5rem, 3vw, 3rem);
   align-items: stretch;
   padding: clamp(1.5rem, 2vw, 2.5rem);
+  //background-image: url('@/assets/images/bgc_.png');
+  //background-repeat: no-repeat;
+  //background-size: cover;
 }
 
 .auth-feature {
@@ -323,7 +285,7 @@ const formComponents = {
   justify-content: flex-start;
   justify-self: end;
   width: min(420px, 100%);
-  min-height: 560px;
+  min-height: 460px;
   padding: clamp(1.5rem, 3vw, 2rem);
   margin-inline: auto;
   background: rgba(255, 255, 255, 0.95);
@@ -430,7 +392,7 @@ const formComponents = {
 .auth-panel__form {
   width: 100%;
   max-width: 100%;
-  min-height: 360px;
+  min-height: 300px;
   margin-inline: auto;
 
   :deep(.el-form-item) {

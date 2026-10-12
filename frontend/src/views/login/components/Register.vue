@@ -15,7 +15,7 @@
       <el-tooltip :visible="isCapsLock" :content="t('login.capsLock')" placement="right">
         <el-form-item prop="password">
           <el-input
-            v-model.trim="model.password"
+            v-model="model.password"
             :placeholder="t('login.password')"
             type="password"
             show-password
@@ -32,7 +32,7 @@
       <el-tooltip :visible="isCapsLock" :content="t('login.capsLock')" placement="right">
         <el-form-item prop="confirmPassword">
           <el-input
-            v-model.trim="model.confirmPassword"
+            v-model="model.confirmPassword"
             :placeholder="t('login.message.password.confirm')"
             type="password"
             show-password
@@ -43,6 +43,21 @@
               <el-icon><Lock /></el-icon>
             </template>
           </el-input>
+        </el-form-item>
+      </el-tooltip>
+
+      <!-- 密码 -->
+      <el-tooltip :visible="false" :content="String(model.type)" placement="right">
+        <el-form-item prop="type">
+          <el-select
+            v-model="model.type"
+            clearable
+            placeholder="请选择注册类型"
+            style="width: 100%"
+          >
+            <el-option :value="0" label="个人注册" />
+            <el-option :value="1" label="团队注册" />
+          </el-select>
         </el-form-item>
       </el-tooltip>
 
@@ -102,15 +117,20 @@
 import type { FormInstance } from "element-plus";
 import { Lock } from "@element-plus/icons-vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import AuthAPI from "@/api/auth";
+import UsersAPI from "@/api/register";
 import type { LoginRequest } from "@/types/api";
 
 const { t } = useI18n();
+const route = useRoute();
 
 const emit = defineEmits(["update:modelValue"]);
 const toLogin = () => emit("update:modelValue", "login");
 
 onMounted(() => getCaptcha());
+
+const typeStatus = ref(Number(route.query.typeStatus) || 0);
 
 const formRef = ref<FormInstance>();
 const loading = ref(false); // 按钮 loading 状态
@@ -120,6 +140,7 @@ const isRead = ref(false);
 
 interface Model extends LoginRequest {
   confirmPassword: string;
+  type: number;
 }
 
 const model = ref<Model>({
@@ -129,6 +150,7 @@ const model = ref<Model>({
   captchaId: "",
   captchaCode: "",
   rememberMe: false,
+  type: typeStatus.value === 2 ? 1 : 0,
 });
 
 const rules = computed(() => {
@@ -202,7 +224,16 @@ function checkCapsLock(event: KeyboardEvent) {
 }
 
 const submit = async () => {
-  await formRef.value?.validate();
-  ElMessage.warning("开发中 ...");
+  try {
+    await formRef.value?.validate();
+    const res = await UsersAPI.registerUser({
+      ...model.value,
+      roleIds: [5],
+      nickname: "自定义权限用户",
+    });
+    console.log("res", res);
+  } catch (e) {
+    console.log("error", e);
+  }
 };
 </script>

@@ -2,19 +2,38 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { scheduleData as initScheduleData } from '@/data/schedule.js'
+import { getAllSchedules } from '@/api/portal/meeting'
 
-export const useMeetingStore = defineStore('meeting', () => {
-  // 日程数据（响应式）
-  const scheduleData = ref(JSON.parse(JSON.stringify(initScheduleData)))
 
-  // 添加日程方法
-  const addSchedule = (dateKey, sessionId, newItem) => {
-    const targetDay = scheduleData.value[dateKey]
-    const targetSession = targetDay?.sessions.find(s => s.id === sessionId)
-    if (targetSession) {
-      targetSession.items.push(newItem)
+export const useMeetingStore = defineStore('meeting', {
+  state: () => ({
+    scheduleData: []
+  }),
+  actions: {
+    async fetchAllSchedules() {
+      try {
+        const res = await getAllSchedules()
+        this.scheduleData = res.data
+      } catch (error) {
+        console.error('获取日程失败', error)
+      }
     }
   }
-
-  return { scheduleData, addSchedule }
 })
+
+
+// export const useMeetingStore = defineStore('meeting', () => {
+//   // 日程数据（响应式）
+//   const scheduleData = ref(JSON.parse(JSON.stringify(initScheduleData)))
+
+//   // 添加日程方法
+//   const addSchedule = (dateKey, sessionId, newItem) => {
+//     const targetDay = scheduleData.value[dateKey]
+//     const targetSession = targetDay?.sessions.find(s => s.id === sessionId)
+//     if (targetSession) {
+//       targetSession.items.push(newItem)
+//     }
+//   }
+
+//   return { scheduleData, addSchedule }
+// })

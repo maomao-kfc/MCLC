@@ -1,8 +1,71 @@
+# ========================
 # 系统文件
+# ========================
 .DS_Store
 Thumbs.db
 *.log
 
-# 编辑器配置
+# ========================
+# 编辑器 / IDE
+# ========================
 .vscode/
 .idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ========================
+# AI 工具配置（不提交）
+# ========================
+.joycode/
+
+# ========================
+# Backend (Java / Maven)
+# ========================
+backend/target/
+backend/*.log
+backend/logs/
+backend/.history
+backend/application-youlai.yml
+backend/docker/*/data/
+backend/docker/minio/config
+backend/docker/xxljob/logs
+
+# ========================
+# Frontend (Vue 3 / pnpm)
+# ========================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.env.local
+frontend/.env.*.local
+frontend/.eslintcache
+frontend/.stylelintcache
+frontend/stats.html
+
+# ========================
+# Webpage (Vue 3 / npm)
+# ========================
+webpage/node_modules/
+webpage/dist/
+webpage/dist-ssr/
+webpage/*.local
+
+# ========================
+# 敏感文件（不提交）
+# ========================
+**/application-prod.yml
+**/application-dev.yml
+*.pem
+*.key
+*.p12
+
+# ========================
+# 临时文件
+# ========================
+package-lock.json
+test-count.js

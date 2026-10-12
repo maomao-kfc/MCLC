@@ -229,13 +229,23 @@ public class GlobalExceptionHandler {
      * 当业务逻辑发生错误时，会抛出 BusinessException 异常。
      */
     @ExceptionHandler(BusinessException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> handleBizException(BusinessException e) {
         log.error("biz exception", e);
         if (e.getResultCode() != null) {
             return Result.failed(e.getResultCode(), e.getMessage());
         }
         return Result.failed(e.getMessage());
+    }
+
+    /**
+     * 处理认证异常（如验证码错误、账号不存在等）
+     * <p>
+     * 当认证过程中发生错误时，会抛出 AuthenticationException 异常。
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public <T> Result<T> handleAuthenticationException(AuthenticationException e) {
+        log.error("AuthenticationException: {}", e.getMessage());
+        return Result.failed(ResultCode.USER_VERIFICATION_CODE_ERROR, e.getMessage());
     }
 
     /**

@@ -70,11 +70,8 @@ const editorConfig: Partial<IEditorConfig> = {
   placeholder: "请输入内容..",
   MENU_CONF: {
     uploadImage: {
-      async customUpload(file: File, insertFn: InsertFnType) {
-        const data = await FileAPI.uploadFile(file);
-        insertFn(data.url, data.name, data.url);
-      },
-    } as any,
+      showErrorMsg: false,
+    },
   },
 };
 

@@ -72,4 +72,9 @@ public class User extends BaseEntity {
      * 是否删除(0-否 1-是)
      */
     private Integer isDeleted;
+
+    /**
+     * 注册类型 (0-个人 1-团队)
+     */
+    private Integer registerType;
 }

@@ -62,7 +62,7 @@ export const useTenantStore = defineStore("tenant", () => {
     restoreTenant();
 
     // 1. 获取租户列表
-    await fetchTenantList();
+    // await fetchTenantList();
 
     // 2. 校验本地恢复的租户是否仍然可用（避免 tenantId 不在列表导致无默认选中）
     if (

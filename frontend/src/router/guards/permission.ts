@@ -40,7 +40,6 @@ export function setupPermissionGuard() {
 
       const permissionStore = usePermissionStore();
       const userStore = useUserStore();
-
       // 动态路由生成
       if (!permissionStore.isRouteGenerated) {
         if (!userStore.userInfo?.roles?.length) {

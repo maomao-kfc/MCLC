@@ -1,45 +1,18 @@
 <template>
   <!-- 🔥 必须只有一个根节点（修复报错核心1） -->
   <div class="faq-wrapper">
-    <h2 class="faq-main-title">常见问题解答(FAQ)</h2>
+    <h2 class="faq-main-title">{{ t('faqPage.title') }}</h2>
 
-    <div class="faq-greeting">
-      <p class="greeting-title">尊敬的各位嘉宾:</p>
-      <p class="greeting-desc">
-        欢迎您莅临本次大会!为了帮助您更好地规划行程并顺利参会,我们整理了以下常见问题与解答。请随时查阅,如有未尽事宜,敬请通过文末联系方式与我们联系。
-      </p>
-    </div>
-
-    <div class="faq-section">
-      <h3 class="section-title">一、大会基本信息</h3>
-      <div class="faq-item">
-        <p class="faq-question">Q1:大会的具体日期、时间和地点?</p>
-        <p class="faq-answer">
-          A:大会将于2026年1月15日至1月17日在上海绿地铂瑞酒店举行。<br>
-          地址:上海市青浦区诸光路1588弄100号<br>
-          大会日程详见:
-          <a href="https://www.medcircle.cn/meeting/index/6148?sourceCode=null" target="_blank" class="faq-link">
-            https://www.medcircle.cn/meeting/index/6148?sourceCode=null
-          </a>
-        </p>
-      </div>
-    </div>
-
-    <div class="faq-section">
-      <h3 class="section-title">二、注册与签到</h3>
-      <div class="faq-item">
-        <p class="faq-question">Q2:如何注册、签到？</p>
-        <p class="faq-answer">A:请在官网注册，现场凭二维码签到。</p>
-      </div>
-    </div>
-
-    <div class="faq-footer">
-      <p class="closing-text">我们期待在上海与您相见,共襄学术盛举!</p>
-      <div class="contact-info">
-        <p>大会名称:中国“海上之光”眼视光学与视觉科学学术会议</p>
-        <p>联系人:梅老师</p>
-        <p>联系电话:13062687248</p>
-        <p>联系邮箱:organizerMCLC@163.com</p>
+<!--    <div class="faq-greeting">-->
+<!--      <p class="greeting-title">{{ t('faqPage.greeting') }}</p>-->
+<!--      <p class="greeting-desc">-->
+<!--        {{ t('faqPage.greetingDesc') }}-->
+<!--      </p>-->
+<!--    </div>-->
+    <div class="faq-section" v-for="item in faqList" :key="item.id">
+      <h3 class="section-title">{{ item?.title
+        }}</h3>
+      <div class="faq-item" v-html="item?.questionDetail">
       </div>
     </div>
 
@@ -51,12 +24,33 @@
 </template>
 
 <script setup>
-// 🔥 修复报错核心2：必须导入国际化
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLangStore } from '@/stores/lang.js'
+import { getPageQuest } from  '@/api/portal/answer'
+import {onMounted} from "vue";
+
 const { t } = useI18n()
+const langStore = useLangStore()
+const faqList = ref()
+
+const fetchData = async () => {
+  const res = await getPageQuest()
+  if(res?.msg === '成功'){
+    faqList.value = JSON.parse(JSON.stringify( res?.data))
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
+
+watch(() => langStore.currentLang, () => {
+  fetchData()
+})
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .faq-wrapper {
   width: 100%;
   background: #ffffff;
@@ -104,6 +98,9 @@ const { t } = useI18n()
 
 .faq-item {
   margin-bottom: 16px;
+  padding-left: 25px;
+  box-sizing: border-box;
+  text-align: left;
 }
 .faq-question {
   font-size: 15px;

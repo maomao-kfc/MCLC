@@ -398,7 +398,7 @@ const emailBindingRules = {
   email: [
     { required: true, message: "请输入邮箱", trigger: "blur" },
     {
-      pattern: /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/,
+      pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       message: "请输入正确的邮箱地址",
       trigger: "blur",
     },

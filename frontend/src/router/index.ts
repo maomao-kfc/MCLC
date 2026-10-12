@@ -1,6 +1,5 @@
 import type { App } from "vue";
-import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-router";
-import hotelRoutes from "./modules/hotel";
+import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 
 export const Layout = () => import("@/layouts/index.vue");
 
@@ -17,13 +16,16 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
     ],
   },
-
   {
     path: "/login",
     component: () => import("@/views/login/index.vue"),
     meta: { hidden: true },
   },
-
+  {
+    path: "/checkIn",
+    component: () => import("@/views/checkIn/index.vue"),
+    meta: { hidden: true },
+  },
   {
     path: "/",
     name: "/",
@@ -79,7 +81,7 @@ export const constantRoutes: RouteRecordRaw[] = [
  * 创建路由
  */
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory("/admin/"),
   routes: constantRoutes,
   // 刷新时，滚动条位置还原
   scrollBehavior: () => ({ left: 0, top: 0 }),

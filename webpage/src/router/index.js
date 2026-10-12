@@ -11,9 +11,10 @@ import Schedule from '@/pages/Schedule.vue'
 import Hotel from '@/pages/Hotel.vue'
 import Faq from '@/pages/Faq.vue'
 import PreMeeting from '@/pages/PreMeeting.vue'
-//引入文章页面
 import ArticleList from '@/pages/ArticleList.vue'
 import ArticleDetail from '@/pages/ArticleDetail.vue'
+import { useRegisterStore } from '@/stores/register'
+import { ElMessage } from 'element-plus'
 
 // 路由页面导入
 const routes = [{
@@ -45,7 +46,7 @@ const routes = [{
 		name: 'Hotel',
 		component: () => import('@/pages/Hotel.vue'),
 		meta: {
-			title: '酒店信息 - 学术会议官网'
+			title: '会议及住宿 - 学术会议官网'
 		}
 	},
 	{
@@ -73,21 +74,61 @@ const routes = [{
 		}
 	},
 	{
+		path: '/first-draft',
+		name: 'FirstDraft',
+		component: () => import('@/pages/FirstDraft.vue'),
+		meta: {
+			title: '论文投稿 - 学术会议官网'
+		}
+	},
+	{
+		path: '/payment',
+		name: 'Payment',
+		component: () => import('@/pages/Payment.vue'),
+		meta: {
+			title: '支付 - 学术会议官网'
+		}
+	},
+	{
+		path: '/review-file',
+		name: 'ReviewFile',
+		component: () => import('@/pages/ReviewFile.vue'),
+		meta: {
+			title: '审稿决议 - 学术会议官网'
+		}
+	},
+	{
 		path: '/register',
 		name: 'Register',
 		component: () => import('@/pages/Register.vue'),
 		meta: {
 			title: '参会注册'
+		},
+		children: [
+			{ path: '', redirect: '/register/enroll' },
+			{ path: 'enroll', component: () => import('@/pages/register/Enroll.vue') },
+			{ 
+				path: 'consent', 
+				component: () => import('@/pages/register/Consent.vue'),
+				meta: { requiresEnroll: true }
+			},
+			{ path: 'contact', component: () => import('@/pages/register/Contact.vue') },
+			{ path: 'survey', component: () => import('@/pages/register/Survey.vue') },
+			{ path: 'signup', component: () => import('@/pages/register/Signup.vue') },
+			{ path: 'skills', component: () => import('@/pages/register/Skills.vue') },
+			{ path: 'expert', component: () => import('@/pages/register/Expert.vue') },
+			{ path: 'confirm', component: () => import('@/pages/register/Confirm.vue') },
+			{ path: 'final', component: () => import('@/pages/register/Final.vue') }
+		]
+	},
+	{
+		path: '/email-configuration',
+		name: 'EmailConfiguration',
+		component: () => import('@/pages/EmailConfiguration.vue'),
+		meta: {
+			title: '邮箱模板配置 - 学术会议官网'
 		}
 	},
-	// {
-	// 	path: '/login',
-	// 	name: 'Login',
-	// 	component: () => import('@/pages/Login.vue'),
-	// 	meta: {
-	// 		title: '用户登录'
-	// 	}
-	// },
 	{
 		path: '/article',
 		name: 'ArticleList',
@@ -123,11 +164,22 @@ const router = createRouter({
 	}
 })
 
-// 路由守卫：动态修改页面标题
-router.beforeEach((to) => {
+// 路由守卫：动态修改页面标题和权限校验
+router.beforeEach((to, from, next) => {
 	if (to.meta.title) {
 		document.title = to.meta.title
 	}
+	
+	if (to.meta.requiresEnroll) {
+		const registerStore = useRegisterStore()
+		const enroll = registerStore.state.enroll
+		if (!enroll.firstName || !enroll.lastName || !enroll.email) {
+			ElMessage.error('请先完成报名信息')
+			next('/register/enroll')
+			return
+		}
+	}
+	next()
 })
 
 export default router

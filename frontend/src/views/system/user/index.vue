@@ -308,7 +308,7 @@ const rules: FormRules = {
   nickname: [{ required: true, message: "请输入用户昵称", trigger: "blur" }],
   deptId: [{ required: true, message: "请选择所属部门", trigger: "change" }],
   roleIds: [{ required: true, message: "请选择用户角色", trigger: "change" }],
-  email: [{ type: "email", message: "请输入正确的邮箱地址", trigger: "blur" }],
+  email: [{ pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, message: "请输入正确的邮箱地址", trigger: "blur" }],
   mobile: [{ pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号码", trigger: "blur" }],
 };
 

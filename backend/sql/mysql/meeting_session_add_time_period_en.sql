@@ -1,0 +1,1 @@
+ALTER TABLE meeting_session ADD COLUMN time_period_en VARCHAR(100) DEFAULT NULL COMMENT '时间段文本（英文）' AFTER time_period;

@@ -69,12 +69,12 @@
         </div>
       </el-form-item>
 
-      <div class="flex-x-between w-full">
-        <el-checkbox v-model="loginFormData.rememberMe">{{ t("login.rememberMe") }}</el-checkbox>
-        <el-link type="primary" underline="never" @click="toOtherForm('resetPwd')">
-          {{ t("login.forgetPassword") }}
-        </el-link>
-      </div>
+<!--      <div class="flex-x-between w-full">-->
+<!--        <el-checkbox v-model="loginFormData.rememberMe">{{ t("login.rememberMe") }}</el-checkbox>-->
+<!--        <el-link type="primary" underline="never" @click="toOtherForm('resetPwd')">-->
+<!--          {{ t("login.forgetPassword") }}-->
+<!--        </el-link>-->
+<!--      </div>-->
 
       <!-- 登录按钮 -->
       <el-form-item>
@@ -84,35 +84,35 @@
       </el-form-item>
     </el-form>
 
-    <div flex-center gap-10px>
-      <el-text size="default">{{ t("login.noAccount") }}</el-text>
-      <el-link type="primary" underline="never" @click="toOtherForm('register')">
-        {{ t("login.reg") }}
-      </el-link>
-    </div>
+<!--    <div flex-center gap-10px>-->
+<!--      <el-text size="default">{{ t("login.noAccount") }}</el-text>-->
+<!--      <el-link type="primary" underline="never" @click="toOtherForm('register')">-->
+<!--        {{ t("login.reg") }}-->
+<!--      </el-link>-->
+<!--    </div>-->
 
     <!-- 第三方登录 -->
-    <div class="third-party-login">
-      <div class="divider-container">
-        <div class="divider-line"></div>
-        <span class="divider-text">{{ t("login.otherLoginMethods") }}</span>
-        <div class="divider-line"></div>
-      </div>
-      <div class="social-login">
-        <div class="social-login__item">
-          <div class="i-svg:wechat" />
-        </div>
-        <div class="social-login__item">
-          <div class="i-svg:qq" />
-        </div>
-        <div class="social-login__item">
-          <div class="i-svg:github" />
-        </div>
-        <div class="social-login__item">
-          <div class="i-svg:gitee" />
-        </div>
-      </div>
-    </div>
+<!--    <div class="third-party-login">-->
+<!--      <div class="divider-container">-->
+<!--        <div class="divider-line"></div>-->
+<!--        <span class="divider-text">{{ t("login.otherLoginMethods") }}</span>-->
+<!--        <div class="divider-line"></div>-->
+<!--      </div>-->
+<!--      <div class="social-login">-->
+<!--        <div class="social-login__item">-->
+<!--          <div class="i-svg:wechat" />-->
+<!--        </div>-->
+<!--        <div class="social-login__item">-->
+<!--          <div class="i-svg:qq" />-->
+<!--        </div>-->
+<!--        <div class="social-login__item">-->
+<!--          <div class="i-svg:github" />-->
+<!--        </div>-->
+<!--        <div class="social-login__item">-->
+<!--          <div class="i-svg:gitee" />-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
   </div>
 </template>
 <script setup lang="ts">
@@ -138,8 +138,8 @@ const captchaBase64 = ref();
 // 记住我
 const rememberMe = AuthStorage.getRememberMe();
 const loginFormData = ref<LoginRequest>({
-  username: "admin",
-  password: "123456",
+  username: "",
+  password: "",
   captchaId: "",
   captchaCode: "",
   rememberMe,

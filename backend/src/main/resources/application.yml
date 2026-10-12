@@ -7,8 +7,12 @@ spring:
     import: classpath:codegen.yml
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      enabled: true
+      max-file-size: 1024MB       # 单个文件
+      max-request-size: 1024MB     # 整个请求
+      resolve-lazily: true         # 延迟解析
+      file-size-threshold: 1KB      # 不存内存，全写磁盘
 # 在 banner.txt 中显示项目版本，使用 @project.version@ 从 pom.xml 获取
 project:
   version: @project.version@
+

@@ -52,6 +52,11 @@ public class UserForm {
     @Schema(description="部门ID")
     private Long deptId;
 
+    /**
+     * 注册类型 (0-个人 1-团队)
+     */
+    private Integer registerType;
+
     @Schema(description="角色ID集合")
     @NotEmpty(message = "用户角色不能为空")
     private List<Long> roleIds;

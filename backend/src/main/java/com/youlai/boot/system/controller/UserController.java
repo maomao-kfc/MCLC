@@ -275,6 +275,19 @@ public class UserController {
         boolean result = userService.unbindEmail(data);
         return Result.judge(result);
     }
-
+    /**
+     * 用户注册（免登录、免权限）
+     */
+    @Operation(summary = "用户注册")
+    @PostMapping("/registerUser")
+    @RepeatSubmit
+    @Log(value = "用户注册", module = LogModuleEnum.USER)
+    public Result<?> registerUser(
+        @RequestBody @Valid UserForm userForm
+    ) {
+        System.out.println("userForm="+userForm);
+        boolean result = userService.saveUser(userForm);
+        return Result.judge(result);
+    }
 
 }

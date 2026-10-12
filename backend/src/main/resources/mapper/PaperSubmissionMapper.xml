@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youlai.boot.portal.mapper.PaperSubmissionMapper">
+
+    <resultMap id="PaperSubmissionPageVOMap" type="com.youlai.boot.portal.model.vo.PaperSubmissionPageVO">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="paperTitle" column="paper_title" jdbcType="VARCHAR"/>
+        <result property="firstAuthor" column="first_author" jdbcType="VARCHAR"/>
+        <result property="contactNumber" column="contact_number" jdbcType="VARCHAR"/>
+        <result property="contactEmail" column="contact_email" jdbcType="VARCHAR"/>
+        <result property="paperAbstract" column="abstract" jdbcType="VARCHAR"/>
+        <result property="keywords" column="keywords" jdbcType="VARCHAR"/>
+        <result property="appendix" column="appendix" jdbcType="VARCHAR"/>
+        <result property="contributionId" column="contribution_id" jdbcType="BIGINT"/>
+        <result property="paperStatus" column="paper_status" jdbcType="INTEGER"/>
+        <result property="rejectReason" column="reject_reason" jdbcType="VARCHAR"/>
+        <result property="emailStatus" column="email_status" jdbcType="INTEGER"/>
+        <result property="deductionStatus" column="deduction_status" jdbcType="INTEGER"/>
+        <result property="discountCode" column="discount_code" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="surname" column="surname" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="selectPaperSubmissionPage" resultMap="PaperSubmissionPageVOMap">
+        SELECT
+            ps.id,
+            ps.paper_title,
+            ps.first_author,
+            ps.contact_number,
+            ps.contact_email,
+            ps.abstract,
+            ps.keywords,
+            ps.appendix,
+            ps.contribution_id,
+            ps.paper_status,
+            ps.reject_reason,
+            ps.email_status,
+            ps.deduction_status,
+            ps.discount_code,
+            ps.name,
+            rui.surname
+        FROM paper_submission ps
+        LEFT JOIN register_user_information rui ON ps.contribution_id = rui.id
+        WHERE 1=1
+        <if test="query.id != null">
+            AND ps.id = #{query.id}
+        </if>
+        <if test="query.paperTitle != null and query.paperTitle != ''">
+            AND ps.paper_title LIKE CONCAT('%', #{query.paperTitle}, '%')
+        </if>
+        <if test="query.firstAuthor != null and query.firstAuthor != ''">
+            AND ps.first_author LIKE CONCAT('%', #{query.firstAuthor}, '%')
+        </if>
+        <if test="query.keywords != null and query.keywords != ''">
+            AND ps.keywords LIKE CONCAT('%', #{query.keywords}, '%')
+        </if>
+        <if test="query.discountCode != null and query.discountCode != ''">
+            AND ps.discount_code LIKE CONCAT('%', #{query.discountCode}, '%')
+        </if>
+        ORDER BY ps.id DESC
+    </select>
+
+</mapper>

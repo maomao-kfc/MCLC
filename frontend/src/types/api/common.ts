@@ -19,6 +19,7 @@ export interface BaseQueryParams {
   /** 每页记录数 */
   pageSize: number;
 
+  title?: string;
   /** 排序字段 */
   sortBy?: string;
 

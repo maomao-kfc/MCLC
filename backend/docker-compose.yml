@@ -1,0 +1,23 @@
+# MCLC 管理端部署配置
+# 使用方法：
+#   1. 将 youlai-boot.jar、Dockerfile、docker-compose.yml 放到同一目录
+#   2. 替换新 jar 包后执行：
+#      docker-compose build
+#      docker-compose up -d
+#   3. 查看日志：
+#      docker-compose logs -f
+
+version: "3.8"
+
+services:
+  mclc-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mclc-admin
+    ports:
+      - "8989:8000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - TZ=Asia/Shanghai
+    restart: unless-stopped

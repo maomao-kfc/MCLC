@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youlai.boot.portal.mapper.MeetingSessionMapper">
+
+    <resultMap id="BaseResultMap" type="com.youlai.boot.portal.model.entity.MeetingSession">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="meetingId" column="meeting_id" jdbcType="BIGINT"/>
+            <result property="title" column="title" jdbcType="VARCHAR"/>
+            <result property="titleEn" column="title_en" jdbcType="VARCHAR"/>
+            <result property="chairperson" column="chairperson" jdbcType="VARCHAR"/>
+            <result property="chairpersonEn" column="chairperson_en" jdbcType="VARCHAR"/>
+            <result property="panelists" column="panelists" jdbcType="VARCHAR"/>
+            <result property="panelistsEn" column="panelists_en" jdbcType="VARCHAR"/>
+            <result property="startTime" column="start_time" jdbcType="TIME"/>
+            <result property="itemType" column="item_type" jdbcType="VARCHAR"/>
+            <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+            <result property="remark" column="remark" jdbcType="VARCHAR"/>
+            <result property="remarkEn" column="remark_en" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,meeting_id,title,title_en,
+        chairperson,chairperson_en,panelists,panelists_en,
+        start_time,item_type,sort_order,remark,remark_en,
+        create_time,update_time
+    </sql>
+</mapper>

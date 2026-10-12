@@ -8,9 +8,9 @@ const messages = {
 }
 
 const i18n = createI18n({
-  legacy: false,         // 使用 Composition API 模式
-  locale: 'zh',          // 默认语言
-  fallbackLocale: 'en',  // 回退语言
+  legacy: false,
+  locale: 'zh',
+  fallbackLocale: 'zh',
   messages
 })
 

@@ -2,81 +2,97 @@
 	<div class="article-page">
 		<!-- 文章顶部头部 -->
 		<div class="article-header">
-			<div class="issue-tag">NO.{{ articleInfo.id }}</div>
-			<h1 class="main-title">{{ articleInfo.title }}</h1>
-			<p class="sub-title">{{ articleInfo.subTitle }}</p>
-			<p class="en-title">{{ articleInfo.enSubTitle }}</p>
-			<p class="meta-info">
-				{{ articleInfo.publishTime }} | {{ articleInfo.author }}
-			</p>
+			<div class="issue-tag">NO.{{ dataCurrent.index_ }}</div>
+			<h1 class="main-title">{{ dataCurrent.title }}</h1>
+			<p class="sub-title">{{ dataCurrent.subTitle }}</p>
+			<p class="en-title">{{ dataCurrent.enSubTitle }}</p>
+<!--			<p class="meta-info">-->
+<!--				{{ articleInfo.publishTime }} | {{ articleInfo.author }}-->
+<!--			</p>-->
 		</div>
 
 		<!-- 讲者介绍 -->
-		<div class="speaker-section" v-if="articleInfo.speaker">
-			<div class="module-title">讲者介绍</div>
+		<div class="speaker-section" >
+			<div class="module-title">{{ t('speakerIntro') }}</div>
 			<div class="speaker-content">
-				<img :src="articleInfo.speaker.avatar" :alt="articleInfo.speaker.name" class="speaker-avatar" />
+				<img :src="dataCurrent?.images" :alt="articleInfo.name" class="speaker-avatar" />
 				<div class="speaker-text">
-					<h3 class="speaker-name">{{ articleInfo.speaker.name }}</h3>
-					<p class="speaker-desc">{{ articleInfo.speaker.title }}</p>
+					<h3 class="speaker-name">{{ dataCurrent.name }}</h3>
+					<p class="speaker-desc">{{ dataCurrent.position }}</p>
 				</div>
 			</div>
 		</div>
+    <div class="article-content">
+      <div class="video-section">
+        <video v-if="dataCurrent.video" class="article-video" :src="dataCurrent.video" :poster="dataCurrent.poster" controls preload="metadata">
+          {{ t('videoNotSupported') }}
+        </video>
+        <div class="content-text" >{{dataCurrent?.introduction}}</div>
+        <div class="content-text" v-html="dataCurrent?.content" ></div>
+        <div  class="reference-section">
+        					<div class="module-title">{{ t('references') }}</div>
+        					<ol class="reference-list">
+        						<li v-html="dataCurrent?.reference" class="reference-item">
 
+        						</li>
+        					</ol>
+        				</div>
+      </div>
+    </div>
 		<!-- 文章核心内容区 -->
-		<div class="article-content">
-			<template v-for="(item, index) in articleInfo.content" :key="index">
-				<div v-if="item.type === 'video'" class="video-section">
-					<video class="article-video" :src="item.src" :poster="item.poster" controls preload="metadata">
-						您的浏览器不支持视频播放，请更换浏览器重试
-					</video>
-					<p v-if="item.desc" class="video-desc">{{ item.desc }}</p>
-				</div>
+<!--		<div class="article-content">-->
+<!--			<template v-for="(item, index) in articleInfo.content" :key="index">-->
+<!--				<div v-if="item.type === 'video'" class="video-section">-->
+<!--					<video class="article-video" :src="item.src" :poster="item.poster" controls preload="metadata">-->
+<!--						您的浏览器不支持视频播放，请更换浏览器重试-->
+<!--					</video>-->
+<!--					<p v-if="item.desc" class="video-desc">{{ item.desc }}</p>-->
+<!--				</div>-->
 
-				<!-- 三级小标题 -->
-				<h3 v-if="item.type === 'title' && item.level === 3" class="h3-title">
-					{{ item.text }}
-				</h3>
+<!--				&lt;!&ndash; 三级小标题 &ndash;&gt;-->
+<!--				<h3 v-if="item.type === 'title' && item.level === 3" class="h3-title">-->
+<!--					{{ item.text }}-->
+<!--				</h3>-->
 
-				<!-- 四级小标题 -->
-				<h4 v-if="item.type === 'title' && item.level === 4" class="h4-title">
-					{{ item.text }}
-				</h4>
+<!--				&lt;!&ndash; 四级小标题 &ndash;&gt;-->
+<!--				<h4 v-if="item.type === 'title' && item.level === 4" class="h4-title">-->
+<!--					{{ item.text }}-->
+<!--				</h4>-->
 
-				<!-- 正文文本 -->
-				<p v-if="item.type === 'text'" class="content-text">
-					{{ item.text }}
-				</p>
+<!--				&lt;!&ndash; 正文文本 &ndash;&gt;-->
+<!--				<p v-if="item.type === 'text'" class="content-text">-->
+<!--					{{ item.text }}-->
+<!--				</p>-->
 
-				<!-- 列表模块 -->
-				<ul v-if="item.type === 'list'" class="content-list">
-					<li v-for="(li, i) in item.list" :key="i" class="list-item">
-						{{ li }}
-					</li>
-				</ul>
+<!--				&lt;!&ndash; 列表模块 &ndash;&gt;-->
+<!--				<ul v-if="item.type === 'list'" class="content-list">-->
+<!--					<li v-for="(li, i) in item.list" :key="i" class="list-item">-->
+<!--						{{ li }}-->
+<!--					</li>-->
+<!--				</ul>-->
 
-				<!-- 图片模块 -->
-				<div v-if="item.type === 'image'" class="img-section" :style="{ maxWidth: item.maxWidth || '100%' }">
-					<img :src="item.src" :alt="item.alt" class="content-img" @click="showBigImg(item.src)" />
-					<p class="img-desc">{{ item.alt }}</p>
-				</div>
+<!--				&lt;!&ndash; 图片模块 &ndash;&gt;-->
+<!--				<div v-if="item.type === 'image'" class="img-section" :style="{ maxWidth: item.maxWidth || '100%' }">-->
+<!--					<img :src="item.src" :alt="item.alt" class="content-img" @click="showBigImg(item.src)" />-->
+<!--					<p class="img-desc">{{ item.alt }}</p>-->
+<!--				</div>-->
 
-				<!-- 参考文献模块 -->
-				<div v-if="item.type === 'reference'" class="reference-section">
-					<div class="module-title">参考文献与学习资料</div>
-					<ol class="reference-list">
-						<li v-for="(ref, i) in item.list" :key="i" class="reference-item">
-							{{ ref }}
-						</li>
-					</ol>
-				</div>
-			</template>
-		</div>
+<!--				&lt;!&ndash; 参考文献模块 &ndash;&gt;-->
+<!--				<div v-if="item.type === 'reference'" class="reference-section">-->
+<!--					<div class="module-title">参考文献与学习资料</div>-->
+<!--					<ol class="reference-list">-->
+<!--						<li v-for="(ref, i) in item.list" :key="i" class="reference-item">-->
+<!--							{{ ref }}-->
+<!--						</li>-->
+<!--					</ol>-->
+<!--				</div>-->
+<!--			</template>-->
+<!--		</div>-->
 
 		<!-- 返回列表按钮 -->
 		<div class="back-btn-wrapper">
 			<el-button type="primary" class="back-btn" @click="$router.back()">
-				← 返回文章列表
+				← {{ t('backToList') }}
 			</el-button>
 		</div>
 
@@ -88,27 +104,67 @@
 </template>
 
 <script setup>
-	import {
-		ref,
-		computed
-	} from 'vue'
-	import {
-		useRoute
-	} from 'vue-router'
-	import {
-		articleList
-	} from '@/data/article.js'
 
-	const route = useRoute()
+import {
+  ref,
+  computed, onMounted, watch
+} from 'vue'
+import {
+  useRoute,
+  useRouter
+} from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import {
+  useLangStore
+} from '@/stores/lang.js'
+import {useGuestStore} from "@/stores/guest";
+import {
+  articleList
+} from '@/data/article.js'
+import {getInformation} from  "@/api/portal/speech";
+
+const { t } = useI18n()
+const dataCurrent = ref({})
+const guestStore = useGuestStore()
+
+const route = useRoute()
+const router = useRouter()
+const langStore = useLangStore()
 	const bigImgUrl = ref('')
-
+  console.log("item.id",route.params)
 	// 获取文章ID，兼容params/query
 	const articleId = computed(() => route.params.id || route.query.id || 1)
-
+console.log('获取文章ID',articleId)
 	// 匹配文章数据
 	const articleInfo = computed(() => {
 		return articleList.zh.find(item => item.id === Number(articleId.value)) || articleList.zh[0]
 	})
+onMounted(async () => {
+  const resVal = await getInformation(articleId.value);
+  if(resVal.code === '00000') {
+    dataCurrent.value = {
+      index_:resVal.data.sort+1,
+      subTitle:t('speechTitleSuffix', { name: resVal.data.name }),
+      enSubTitle:resVal.data?.motto,
+      ...resVal.data
+    }
+  }
+  // guestStore.guestList.filter((item,index) => {
+  //   if(item.id === route.params.id){
+  //     dataCurrent.value = {
+  //       index_ : index+1,
+  //       title:item.title,
+  //       subTitle:t('speechTitleSuffix', { name: item.name }),
+  //       enSubTitle:item?.motto,
+  //       ...item,
+  //     }
+  //   }
+  // })
+})
+
+watch(() => langStore.currentLang, () => {
+  router.push('/')
+})
 
 	// 图片放大
 	const showBigImg = (src) => {
@@ -219,8 +275,7 @@
 	.speaker-text {
 		//text-align: left;
 		flex: 1;
-		max-width: calc(100% - 96px);
-		margin-left: -100px;
+		max-width: calc(100% - 120px);
 	}
 
 	.speaker-name {

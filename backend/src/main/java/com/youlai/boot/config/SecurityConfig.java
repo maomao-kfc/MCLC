@@ -9,6 +9,8 @@ import com.youlai.boot.security.filter.CaptchaValidationFilter;
 import com.youlai.boot.security.filter.TokenAuthenticationFilter;
 import com.youlai.boot.security.handler.MyAccessDeniedHandler;
 import com.youlai.boot.security.handler.MyAuthenticationEntryPoint;
+import com.youlai.boot.portal.service.RegisterUserService;
+import com.youlai.boot.security.provider.EmailAuthenticationProvider;
 import com.youlai.boot.security.provider.SmsAuthenticationProvider;
 import com.youlai.boot.security.provider.WechatMiniAuthenticationProvider;
 import com.youlai.boot.security.token.TokenManager;
@@ -25,7 +27,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+// WebSecurityCustomizer 已移除，unsecuredUrls 改用 HttpSecurity.permitAll()
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -37,8 +39,20 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import java.util.*;
 
 /**
- * Spring Security 配置类
+ * Spring Security 核心配置类
  *
+ * 职责：
+ * 1. 组装SecurityFilterChain：RateLimiterFilter → CaptchaValidationFilter → TokenAuthenticationFilter → Authorization
+ * 2. 配置4种AuthenticationProvider：Dao(用户名密码)/Sms(短信验证码)/Email(邮箱验证码)/WechatMini(微信小程序)
+ * 3. 定义公开路径(ignoreUrls, 23个)和内部路径(unsecuredUrls, 7个Swagger/Actuator)
+ * 4. 配置CORS/CSP/Session策略(stateless)/异常处理(AccessDenied/AuthenticationEntryPoint)
+ *
+ * 安全架构详见：docs/08-rbac-permission.md
+ *
+ * @see SecurityProperties ignoreUrls/unsecuredUrls配置
+ * @see TokenAuthenticationFilter JWT解析过滤器
+ * @see RateLimiterFilter Redis令牌桶限流
+ * @see CaptchaValidationFilter 验证码校验(仅/login接口)
  * @author Ray.Hao
  * @since 2023/2/17
  */
@@ -54,6 +68,7 @@ public class SecurityConfig {
     private final TokenManager tokenManager;
     private final UserService userService;
     private final SysUserDetailsService userDetailsService;
+    private final RegisterUserService registerUserService;
 
     private final CodeGenerator codeGenerator;
     private final ConfigService configService;
@@ -74,6 +89,11 @@ public class SecurityConfig {
                             String[] ignoreUrls = securityProperties.getIgnoreUrls();
                             if (ArrayUtil.isNotEmpty(ignoreUrls)) {
                                 requestMatcherRegistry.requestMatchers(ignoreUrls).permitAll();
+                            }
+                            // 非安全端点路径（Swagger/API文档等），使用permitAll替代WebSecurity.ignoring
+                            String[] unsecuredUrls = securityProperties.getUnsecuredUrls();
+                            if (ArrayUtil.isNotEmpty(unsecuredUrls)) {
+                                requestMatcherRegistry.requestMatchers(unsecuredUrls).permitAll();
                             }
                             // 其他所有请求需登录后访问
                             requestMatcherRegistry.anyRequest().authenticated();
@@ -104,19 +124,13 @@ public class SecurityConfig {
     }
 
     /**
-     * 配置Web安全自定义器，以忽略特定请求路径的安全性检查。
+     * 已移除 WebSecurityCustomizer Bean。
      * <p>
-     * 该配置用于指定哪些请求路径不经过Spring Security过滤器链。通常用于静态资源文件。
+     * 原先使用 web.ignoring() 绕过Spring Security过滤器链（用于Swagger/API文档路径），
+     * Spring Security 6.x 不推荐此方式，会产生WARN日志。
+     * 现已将 unsecuredUrls 合并到 HttpSecurity.authorizeHttpRequests 的 permitAll() 中，
+     * 这些路径仍允许匿名访问，但会经过安全过滤器链（可记录日志、限流等）。
      */
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> {
-            String[] unsecuredUrls = securityProperties.getUnsecuredUrls();
-            if (ArrayUtil.isNotEmpty(unsecuredUrls)) {
-                web.ignoring().requestMatchers(unsecuredUrls);
-            }
-        };
-    }
 
     /**
      * 默认密码认证的 Provider
@@ -137,6 +151,14 @@ public class SecurityConfig {
     }
 
     /**
+     * 邮箱验证码认证 Provider
+     */
+    @Bean
+    public EmailAuthenticationProvider emailAuthenticationProvider() {
+        return new EmailAuthenticationProvider(registerUserService, redisTemplate);
+    }
+
+    /**
      * 微信小程序认证 Provider
      */
     @Bean
@@ -154,12 +176,14 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             DaoAuthenticationProvider daoAuthenticationProvider,
             SmsAuthenticationProvider smsAuthenticationProvider,
-            WechatMiniAuthenticationProvider wechatMiniAuthenticationProvider
+            WechatMiniAuthenticationProvider wechatMiniAuthenticationProvider,
+            EmailAuthenticationProvider emailAuthenticationProvider
     ) {
         return new ProviderManager(
                 daoAuthenticationProvider,
                 smsAuthenticationProvider,
-                wechatMiniAuthenticationProvider
+                wechatMiniAuthenticationProvider,
+                emailAuthenticationProvider
         );
     }
 

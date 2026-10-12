@@ -26,9 +26,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * 日志切面
@@ -99,7 +98,7 @@ public class LogAspect {
 
         // 异常情况：追加异常信息到日志内容
         if (e != null) {
-            log.setContent(logAnnotation.value() + "（失败：" + e.getMessage() + "）");
+            log.setContent(StrUtil.sub(logAnnotation.value() + "（失败：" + e.getMessage() + "）", 0, 255));
             // 请求参数（异常时也记录，便于排查问题）
             this.setRequestParameters(joinPoint, log);
             // 异常堆栈（截取前 2000 字符，避免过长）
@@ -175,7 +174,16 @@ public class LogAspect {
     }
 
     /**
-     * 将参数数组转换为字符串
+     * 敏感字段脱敏正则：匹配JSON中的password/secret/token等字段值
+     * 匹配模式："password":"xxx" 或 "password": "xxx"（含引号内值）
+     */
+    private static final Pattern SENSITIVE_FIELD_PATTERN = Pattern.compile(
+            "(\"(?:password|pwd|secret|token|accessToken|refreshToken|apiKey|apiSecret|privateKey|credentials)\"\\s*:\\s*)\"[^\"]*\"",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    /**
+     * 将参数数组转换为字符串（敏感字段自动脱敏）
      *
      * @param paramsArray 参数数组
      * @return 参数字符串
@@ -189,12 +197,28 @@ public class LogAspect {
                     if(param.getClass().isPrimitive() || param.getClass().isEnum()) {
                         params.append(param).append(" ");
                     } else {
-                        params.append(JSONUtil.toJsonStr(param)).append(" ");
+                        String jsonStr = JSONUtil.toJsonStr(param);
+                        // 对敏感字段进行脱敏处理
+                        jsonStr = maskSensitiveFields(jsonStr);
+                        params.append(jsonStr).append(" ");
                     }
                 }
             }
         }
         return params.toString().trim();
+    }
+
+    /**
+     * 对JSON字符串中的敏感字段值进行脱敏（替换为******）
+     *
+     * @param jsonStr JSON字符串
+     * @return 脱敏后的JSON字符串
+     */
+    private String maskSensitiveFields(String jsonStr) {
+        if (jsonStr == null || jsonStr.isEmpty()) {
+            return jsonStr;
+        }
+        return SENSITIVE_FIELD_PATTERN.matcher(jsonStr).replaceAll("$1\"******\"");
     }
 
     /**

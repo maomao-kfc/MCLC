@@ -5,12 +5,26 @@ import request from '@/utils/request'
 // 用户注册接口
 export const register = (data) => {
   return request({
-    url: '/api/user/register', // 后续改成你的后端真实接口地址
+    url: '/api/v1/registerUser',
     method: 'POST',
     data
   })
 }
 
-// 后续可扩展：登录、获取用户信息、报名记录等接口
-// export const login = (data) => request.post('/api/user/login', data)
-// export const getUserInfo = () => request.get('/api/user/info')
+// 根据邮箱查询注册用户
+export const getRegisterUserByEmail = (email) => {
+  return request({
+    url: '/api/v1/registerUser',
+    method: 'GET',
+    params: { email, pageNum: 1, pageSize: 1 }
+  })
+}
+
+// 更新注册用户
+export const updateRegisterUser = (id, data) => {
+  return request({
+    url: `/api/v1/registerUser/${id}`,
+    method: 'PUT',
+    data
+  })
+}

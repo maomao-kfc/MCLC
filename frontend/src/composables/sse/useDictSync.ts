@@ -31,7 +31,7 @@ let singletonInstance: ReturnType<typeof createDictSyncComposable> | null = null
  */
 function createDictSyncComposable() {
   const dictStore = useDictStoreHook();
-  const sse = useSse();
+  // const sse = useSse();
 
   // 消息回调函数列表
   const messageCallbacks = ref<DictChangeCallback[]>([]);
@@ -68,10 +68,10 @@ function createDictSyncComposable() {
    */
   const initialize = () => {
     // 建立 SSE 连接
-    sse.connect();
+    // sse.connect();
 
     // 订阅字典变更事件
-    unsubscribe = sse.on("dict", handleDictChangeMessage);
+    // unsubscribe = sse.on("dict", handleDictChangeMessage);
   };
 
   /**
@@ -108,8 +108,8 @@ function createDictSyncComposable() {
 
   return {
     // 状态
-    isConnected: sse.isConnected,
-    connectionState: sse.connectionState,
+    // isConnected: sse.isConnected,
+    // connectionState: sse.connectionState,
 
     // 方法
     initialize,

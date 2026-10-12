@@ -2,42 +2,49 @@
 <template>
 	<div class="pre-meeting-wrapper">
 		<div class="huiHead">
-			<el-image src="/assets/image/preMeeting/huiQianHuiShouTu.png" fit="cover" />
+			<el-image :src="objVal?.hqapImage" fit="cover" />
 		</div>
 		<div class="pre-meeting-header">
 			<h1 class="pre-meeting-title">{{ t('preMeeting.title') }}</h1>
 			<h4 class="pre-meeting-date">{{ t('preMeeting.date') }}</h4>
 		</div>
 		<div class="pre-meeting-list">
-			<div class="meeting-item" v-for="(item, index) in preMeetingList" :key="index">
+			<div class="meeting-item" v-for="(item, index) in blockArrangeList" :key="index">
 				<div class="room-tag" :ref="el => setRoomTagRef(el, index)" :class="{ 'align-top': item.isMultiLine }">
 					{{ item.room }}
 				</div>
-				<div class="meeting-topic" :ref="el => setTopicTagRef(el, index)">
-					{{ item.topic }}
-				</div>
+				<div class="meeting-topic" :ref="el => setTopicTagRef(el, index)" v-html="item.topic"></div>
 			</div>
 		</div>
 	</div>
 </template>
 
 <script setup>
-	import {
-		ref,
-		computed,
-		onMounted,
-		nextTick,
-		watch
-	} from 'vue'
-	import {
-		useI18n
-	} from 'vue-i18n'
-
-	const {
-		t,
-		locale,
-		messages
-	} = useI18n()
+import { getArrangeList } from '@/api/portal/arrange'
+import {
+  ref,
+  computed,
+  onMounted,
+  nextTick,
+  watch
+} from 'vue'
+import {
+  useI18n
+} from 'vue-i18n'
+import { useLangStore } from '@/stores/lang.js'
+import { useGuestStore } from '@/stores/guest.js'
+import {storeToRefs} from "pinia";
+const guestStore = useGuestStore()
+const { hwList } = storeToRefs(guestStore)
+const langStore = useLangStore()
+const objVal = computed(() => {
+  return  hwList.value?.[0]
+})
+const {
+  t,
+  locale,
+  messages
+} = useI18n()
 
 	// 会前会列表DOM引用
 	const roomTagRefs = ref([])
@@ -46,7 +53,9 @@
 
 	// 初始化会前会列表数据
 	const initMeetingList = () => {
+    console.log("locale.value",locale.value)
 		const originList = messages.value[locale.value]?.preMeeting?.list || []
+    console.log("originList",originList)
 		processedMeetingList.value = originList.map(item => ({
 			...item,
 			lineCount: 1,
@@ -99,11 +108,36 @@
 	watch(locale, () => {
 		initMeetingList()
 	})
+const listArrange = ref([])
 
-	// 页面挂载
-	onMounted(() => {
-		initMeetingList()
-	})
+const fetchData = async () => {
+  const res = await getArrangeList()
+  if(res?.msg === '成功'){
+    listArrange.value = JSON.parse(JSON.stringify( res?.data.map(item => ({
+      room:item?.arrangeRoom,
+      topic:item?.arrangeContent,
+      arrangeType: item?.arrangeType,
+      lineCount: 1,
+      isMultiLine: true
+    }))))
+  }
+}
+
+// BLOCK类型的会前安排数据（板块列表），过滤掉HEADER类型
+const blockArrangeList = computed(() => {
+  return listArrange.value.filter(item => item.arrangeType !== 'HEADER')
+})
+
+// 页面挂载
+onMounted(async() => {
+  await fetchData()
+  initMeetingList()
+})
+
+watch(() => langStore.currentLang, async () => {
+  await fetchData()
+  initMeetingList()
+})
 </script>
 
 <style scoped>
@@ -182,6 +216,17 @@
 		align-items: flex-start;
 		gap: 20px;
 		width: 100%;
+	}
+
+	@media (max-width: 768px) {
+		.meeting-item {
+			flex-direction: column;
+			gap: 12px;
+		}
+		.room-tag {
+			min-width: unset;
+			width: 100%;
+		}
 	}
 
 	.room-tag {

@@ -12,6 +12,9 @@ target
 logs
 .history
 
+# 保留 IDEA 共享运行配置（解决 Windows 命令行长度限制）
+!.idea/runConfigurations/
+
 
 docker/*/data/
 docker/minio/config

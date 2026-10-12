@@ -2,30 +2,22 @@
 <template>
   <div class="guests-content">
     <div class="guest-section">
-      <h2 class="section-title">一 主旨报告 一</h2>
-      <div class="main-guest-single">
-        <GuestCard 
-          :guest="guestData.main[0]" 
-          @click="showGuestDetail" 
-        />
-      </div>
+      <h2 class="section-title">{{ t('keynoteReport') }}</h2>
       <div class="guests-grid">
-        <GuestCard 
-          v-for="guest in guestData.main.slice(1)" 
+        <GuestCard
+          v-for="guest in zzbgList"
           :key="guest.id"
-          :guest="guest" 
-          @click="showGuestDetail" 
+          :guest="guest"
         />
       </div>
     </div>
     <div class="guest-section">
-      <h2 class="section-title">一 特邀嘉宾 一</h2>
+      <h2 class="section-title">{{ t('invitedGuests') }}</h2>
       <div class="guests-grid">
-        <GuestCard 
-          v-for="guest in guestData.invited" 
+        <GuestCard
+          v-for="guest in tyjbList"
           :key="guest.id"
-          :guest="guest" 
-          @click="showGuestDetail" 
+          :guest="guest"
         />
       </div>
     </div>
@@ -33,31 +25,52 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLangStore } from '@/stores/lang.js'
-import { guestData } from '@/data/guest.js'
 import GuestCard from '@/components/business/GuestCard.vue'
-import { ElMessageBox } from 'element-plus'
-
+import { getPageGuest } from  '@/api/portal/guest'
 const { t } = useI18n()
 const langStore = useLangStore()
-const currentLang = computed(() => langStore.currentLang)
+let zzbgList = ref([])
+let tyjbList = ref([])
+let fetchId = 0
 
-// 嘉宾详情弹窗
-const showGuestDetail = (guest) => {
-  if (!guest) return
-  const title = currentLang.value === 'zh' ? guest.nameZh : guest.nameEn
-  const content = (currentLang.value === 'zh' ? guest.titleZh : guest.titleEn).join('\n')
-  ElMessageBox.alert(content, title, {
-    confirmButtonText: currentLang.value === 'zh' ? '确定' : 'Confirm',
-    type: 'info',
-    center: true,
-    customClass: 'guest-detail-modal'
-  })
+const fetchData = async () => {
+  const id = ++fetchId
+  zzbgList.value = []
+  tyjbList.value = []
+  try {
+  const res = await getPageGuest()
+  if (id !== fetchId) return
+  if(res?.msg === '成功'){
+    let dataList = JSON.parse(JSON.stringify( res?.data))
+    for (const item of dataList) {
+      item.avatar = item?.image
+      item.nameZh = item?.name
+      item.nameEn = item?.name;
+      item.titleZh = item?.position
+      item.titleEn = item?.position;
+    }
+    zzbgList.value = dataList?.filter(item => item?.type === '1')
+    tyjbList.value = dataList?.filter(item => item?.type === '2')
+  }
+  } catch {
+    if (id === fetchId) {
+      fetchId = 0
+    }
+  }
 }
-</script>
 
+onMounted(() => {
+  fetchData()
+})
+
+watch(() => langStore.currentLang, () => {
+  fetchData()
+})
+
+</script>
 <style scoped>
 .guests-content {
   background: #fff;
@@ -73,34 +86,20 @@ const showGuestDetail = (guest) => {
   color: #7952b3;
   margin-bottom: 30px;
 }
-.main-guest-single {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-}
 .guests-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 @media (max-width: 992px) {
+  .guests-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
   .guests-grid {
     grid-template-columns: 1fr;
   }
 }
 </style>
 
-<style>
-/* 嘉宾详情弹窗深度样式 */
-:deep(.guest-detail-modal) {
-  .el-message-box__content {
-    white-space: pre-line;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .el-message-box__title {
-    font-size: 18px;
-    font-weight: 700;
-  }
-}
-</style>

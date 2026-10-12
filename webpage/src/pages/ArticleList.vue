@@ -80,7 +80,7 @@ const goToDetail = (id) => {
 .list-container {
   flex: 1;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 60px 20px 80px;
   box-sizing: border-box;
@@ -214,9 +214,16 @@ const goToDetail = (id) => {
 }
 
 /* 响应式适配 */
+@media (max-width: 1200px) {
+  .list-container {
+    max-width: 1200px;
+  }
+}
+
 @media (max-width: 768px) {
   .list-container {
     padding: 40px 16px 40px;
+    width: 95%;
   }
   .page-title {
     font-size: 26px;
@@ -237,6 +244,22 @@ const goToDetail = (id) => {
   }
   .article-subtitle {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-container {
+    padding: 30px 12px 30px;
+    width: 98%;
+  }
+  .article-card {
+    padding: 16px;
+    gap: 12px;
+  }
+  .card-tag {
+    width: 50px;
+    height: 50px;
+    font-size: 14px;
   }
 }
 </style>

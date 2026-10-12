@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youlai.boot.support.mail.mapper.MailSendRecordMapper">
+
+    <!-- 分页查询邮件发送记录（仅查询原始记录，重试记录通过children字段返回） -->
+    <select id="getMailSendRecordPage" resultType="com.youlai.boot.support.mail.model.vo.MailSendRecordPageVO">
+        SELECT
+            id,
+            business_type AS businessType,
+            CASE business_type
+                WHEN 'PAPER_SUBMIT' THEN '论文审稿通知'
+                WHEN 'PAPER_PASS' THEN '论文审核通过'
+                WHEN 'PAPER_REJECT' THEN '论文审核拒绝'
+                WHEN 'USER_REGISTER' THEN '注册成功通知'
+                WHEN 'RESET_PASSWORD' THEN '密码重置'
+                WHEN 'MEETING_NOTICE' THEN '会议提醒'
+                WHEN 'ADMIN_ERROR_NOTIFY' THEN '管理员错误通知'
+                ELSE business_type
+            END AS businessTypeDesc,
+            business_id AS businessId,
+            receiver,
+            receiver_name AS receiverName,
+            subject,
+            send_status AS sendStatus,
+            CASE send_status
+                WHEN 0 THEN '待发送'
+                WHEN 1 THEN '已提交至邮件服务器'
+                WHEN 2 THEN '发送失败'
+                WHEN 3 THEN '重试中'
+                WHEN 4 THEN '已取消'
+                WHEN 5 THEN '退信-投递失败'
+                WHEN 6 THEN '待重试'
+                WHEN 7 THEN '重试成功'
+                WHEN 8 THEN '重试失败'
+                ELSE CONCAT('未知状态(', send_status, ')')
+            END AS sendStatusDesc,
+            delivery_status AS deliveryStatus,
+            CASE delivery_status
+                WHEN 0 THEN '等待投递'
+                WHEN 1 THEN '已投递'
+                WHEN 2 THEN '已退信'
+                WHEN 3 THEN '投递中'
+                ELSE CONCAT('未知状态(', IFNULL(delivery_status, -1), ')')
+            END AS deliveryStatusDesc,
+            retry_count AS retryCount,
+            error_message AS errorMessage,
+            bounce_reason AS bounceReason,
+            bounce_code AS bounceCode,
+            parent_record_id AS parentRecordId,
+            record_type AS recordType,
+            retry_sequence AS retrySequence,
+            root_record_id AS rootRecordId,
+            message_id AS messageId,
+            consume_time AS consumeTime,
+            sender,
+            send_time AS sendTime,
+            create_time AS createTime
+        FROM mail_send_record
+        <where>
+            <!-- 核心过滤：只查询原始记录（重试记录通过children返回） -->
+            (record_type = 'ORIGINAL' OR record_type IS NULL OR parent_record_id IS NULL)
+            <if test="query.businessType != null and query.businessType != ''">
+                AND business_type = #{query.businessType}
+            </if>
+            <if test="query.businessId != null">
+                AND business_id = #{query.businessId}
+            </if>
+            <if test="query.receiver != null and query.receiver != ''">
+                AND receiver LIKE CONCAT('%', #{query.receiver}, '%')
+            </if>
+            <if test="query.sendStatus != null">
+                AND send_status = #{query.sendStatus}
+            </if>
+            <if test="query.deliveryStatus != null">
+                AND delivery_status = #{query.deliveryStatus}
+            </if>
+            <if test="query.subject != null and query.subject != ''">
+                AND subject LIKE CONCAT('%', #{query.subject}, '%')
+            </if>
+            <if test="query.startTime != null and query.startTime != ''">
+                AND create_time >= #{query.startTime}
+            </if>
+            <if test="query.endTime != null and query.endTime != ''">
+                AND create_time &lt;= #{query.endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据根记录ID列表批量查询重试记录（用于组装树形结构） -->
+    <select id="getRetryRecordsByRootIds" resultType="com.youlai.boot.support.mail.model.vo.MailSendRecordPageVO">
+        SELECT
+            id,
+            business_type AS businessType,
+            CASE business_type
+                WHEN 'PAPER_SUBMIT' THEN '论文审稿通知'
+                WHEN 'PAPER_PASS' THEN '论文审核通过'
+                WHEN 'PAPER_REJECT' THEN '论文审核拒绝'
+                WHEN 'USER_REGISTER' THEN '注册成功通知'
+                WHEN 'RESET_PASSWORD' THEN '密码重置'
+                WHEN 'MEETING_NOTICE' THEN '会议提醒'
+                WHEN 'ADMIN_ERROR_NOTIFY' THEN '管理员错误通知'
+                ELSE business_type
+            END AS businessTypeDesc,
+            business_id AS businessId,
+            receiver,
+            receiver_name AS receiverName,
+            subject,
+            send_status AS sendStatus,
+            CASE send_status
+                WHEN 0 THEN '待发送'
+                WHEN 1 THEN '已提交至邮件服务器'
+                WHEN 2 THEN '发送失败'
+                WHEN 3 THEN '重试中'
+                WHEN 4 THEN '已取消'
+                WHEN 5 THEN '退信-投递失败'
+                WHEN 6 THEN '待重试'
+                WHEN 7 THEN '重试成功'
+                WHEN 8 THEN '重试失败'
+                ELSE CONCAT('未知状态(', send_status, ')')
+            END AS sendStatusDesc,
+            delivery_status AS deliveryStatus,
+            CASE delivery_status
+                WHEN 0 THEN '等待投递'
+                WHEN 1 THEN '已投递'
+                WHEN 2 THEN '已退信'
+                WHEN 3 THEN '投递中'
+                ELSE CONCAT('未知状态(', IFNULL(delivery_status, -1), ')')
+            END AS deliveryStatusDesc,
+            retry_count AS retryCount,
+            error_message AS errorMessage,
+            bounce_reason AS bounceReason,
+            bounce_code AS bounceCode,
+            parent_record_id AS parentRecordId,
+            record_type AS recordType,
+            retry_sequence AS retrySequence,
+            root_record_id AS rootRecordId,
+            message_id AS messageId,
+            consume_time AS consumeTime,
+            sender,
+            send_time AS sendTime,
+            create_time AS createTime
+        FROM mail_send_record
+        WHERE record_type = 'RETRY'
+          AND root_record_id IN
+            <foreach collection="rootIds" item="rootId" open="(" separator="," close=")">
+                #{rootId}
+            </foreach>
+        ORDER BY root_record_id, retry_sequence ASC
+    </select>
+
+</mapper>

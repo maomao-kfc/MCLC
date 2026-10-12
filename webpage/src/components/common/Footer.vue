@@ -3,13 +3,15 @@
   <div class="diBu">
     <div class="xinXi">
       <el-image src="/assets/image/common/diLoGo.png" class="diLoGo" />
-      <span class="diLoGoWenZi">大会官网内容未经允许，严禁拷贝或转载，否则追究法律责任！|京ICP备15042885号-1</span>
+      <span class="diLoGoWenZi">{{ t('footer.copyright') }}</span>
+      <a class="icp-link" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">沪ICP备2026022893号-1</a>
     </div>
   </div>
 </template>
 
 <script setup>
-	
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 </script>
 
 <style scoped>
@@ -21,6 +23,15 @@
   align-items: center;
   justify-content: center;
 }
+
+.diBu.fixed-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
 .xinXi {
   display: flex;
   align-items: center;
@@ -35,5 +46,14 @@
   color: #C9CEE7;
   font-size: 12px;
   line-height: 1;
+}
+.icp-link {
+  color: #C9CEE7;
+  font-size: 12px;
+  text-decoration: none;
+  line-height: 1;
+}
+.icp-link:hover {
+  color: #fff;
 }
 </style>

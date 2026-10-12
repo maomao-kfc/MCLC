@@ -14,7 +14,7 @@ import en from './locales/en.js'
 
 // 国际化配置
 const i18n = createI18n({
-  legacy: false, // Vue3组合式API必须关闭legacy模式
+  legacy: false,
   locale: 'zh',
   fallbackLocale: 'zh',
   messages: { zh, en }
@@ -30,11 +30,11 @@ app.use(i18n)
 // 注册插件，配置默认参数
 app.use(Viewer, {
   defaultOptions: {
-    zIndex: 9999, 
-    toolbar: true, 
-    title: true, 
-    button: true, 
-    navbar: true, 
+    zIndex: 9999,
+    toolbar: true,
+    title: true,
+    button: true,
+    navbar: true,
     transition: true,
     rotatable: true,
   }

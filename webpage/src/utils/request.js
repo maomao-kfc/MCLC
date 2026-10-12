@@ -3,14 +3,20 @@ import axios from 'axios'
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: '/api', // 后续改成你的真实API地址
-  timeout: 10000
+  baseURL: '/dev-api', // 后续改成你的真实API地址
+  timeout: 60000
 })
 
 // 请求拦截器
 request.interceptors.request.use(
   config => {
-    // 后续可以在这里加token
+    const token = sessionStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    const lang = localStorage.getItem('meeting-lang') || 'zh'
+    config.params = config.params || {}
+    config.params.countryType = lang === 'en' ? 'EN' : 'ZH'
     return config
   },
   error => Promise.reject(error)
@@ -18,7 +24,14 @@ request.interceptors.request.use(
 
 // 响应拦截器
 request.interceptors.response.use(
-  response => response.data,
+  response => {
+    const res = response.data
+    // 业务code不为00000时视为业务异常，reject让调用方catch处理
+    if (res.code && res.code !== '00000') {
+      return Promise.reject(new Error(res.msg || '请求失败'))
+    }
+    return res
+  },
   error => Promise.reject(error)
 )
 

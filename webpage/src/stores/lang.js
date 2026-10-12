@@ -8,17 +8,14 @@ export const useLangStore = defineStore('lang', () => {
 
   // 方法
   const setLang = (lang) => {
-    currentLang.value = lang
-    // 可选：持久化到localStorage
     localStorage.setItem('meeting-lang', lang)
+    currentLang.value = lang
   }
 
-  // 初始化：从本地存储读取语言
+  // 初始化：默认简体中文（刷新时也默认中文）
   const initLang = () => {
-    const localLang = localStorage.getItem('meeting-lang')
-    if (localLang) {
-      currentLang.value = localLang
-    }
+    localStorage.setItem('meeting-lang', 'zh')
+    currentLang.value = 'zh'
   }
 
   return { currentLang, setLang, initLang }

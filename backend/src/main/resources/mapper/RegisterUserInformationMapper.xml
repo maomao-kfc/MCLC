@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youlai.boot.portal.mapper.RegisterUserInformationMapper">
+
+    <resultMap id="RegisterUserPageVOMap" type="com.youlai.boot.portal.model.vo.RegisterUserPageVO">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="connectId" column="connect_id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="surname" column="surname" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+        <result property="organization" column="organization" jdbcType="VARCHAR"/>
+        <result property="mobilePhone" column="mobile_phone" jdbcType="VARCHAR"/>
+        <result property="street" column="street" jdbcType="VARCHAR"/>
+        <result property="postalCode" column="postal_code" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="country" column="country" jdbcType="VARCHAR"/>
+        <result property="billOrganization" column="bill_organization" jdbcType="VARCHAR"/>
+        <result property="billVat" column="bill_vat" jdbcType="VARCHAR"/>
+        <result property="billProcurement" column="bill_procurement" jdbcType="VARCHAR"/>
+        <result property="billStreet" column="bill_street" jdbcType="VARCHAR"/>
+        <result property="billPostalCode" column="bill_postal_code" jdbcType="VARCHAR"/>
+        <result property="billCity" column="bill_city" jdbcType="VARCHAR"/>
+        <result property="billStatus" column="bill_status" jdbcType="INTEGER"/>
+        <result property="billCountry" column="bill_country" jdbcType="VARCHAR"/>
+        <result property="registrationType" column="registration_type" jdbcType="VARCHAR"/>
+        <result property="registrationFee" column="registration_fee" jdbcType="VARCHAR"/>
+        <result property="registrationDate" column="registration_date" jdbcType="VARCHAR"/>
+        <result property="paymentMethod" column="payment_method" jdbcType="VARCHAR"/>
+        <result property="paymentStatus" column="payment_status" jdbcType="VARCHAR"/>
+        <result property="stripePaymentIntentId" column="stripe_payment_intent_id" jdbcType="VARCHAR"/>
+        <result property="paymentAmount" column="payment_amount" jdbcType="VARCHAR"/>
+        <result property="visaName" column="visa_name" jdbcType="VARCHAR"/>
+        <result property="visaSurname" column="visa_surname" jdbcType="VARCHAR"/>
+        <result property="visaPassport" column="visa_passport" jdbcType="VARCHAR"/>
+        <result property="visaIssueTime" column="visa_issue_time" jdbcType="VARCHAR"/>
+        <result property="visaEndTime" column="visa_end_time" jdbcType="VARCHAR"/>
+        <result property="visaTime" column="visa_time" jdbcType="VARCHAR"/>
+        <result property="visaArea" column="visa_area" jdbcType="VARCHAR"/>
+        <result property="visaIsNeed" column="visa_is_need" jdbcType="INTEGER"/>
+        <result property="registrationCategory" column="registration_category" jdbcType="VARCHAR"/>
+        <result property="registrationDocument" column="registration_document" jdbcType="VARCHAR"/>
+        <result property="registrationWhichMember" column="registration_which_member" jdbcType="VARCHAR"/>
+        <result property="registrationCode" column="registration_code" jdbcType="VARCHAR"/>
+        <result property="deductionCode" column="deduction_code" jdbcType="VARCHAR"/>
+        <result property="picBank" column="pic_bank" jdbcType="VARCHAR"/>
+        <result property="actualPayment" column="actual_payment" jdbcType="VARCHAR"/>
+        <result property="registerLabel" column="register_label" jdbcType="VARCHAR"/>
+        <result property="reviewStatus" column="review_status" jdbcType="INTEGER"/>
+        <result property="rejectReason" column="reject_reason" jdbcType="VARCHAR"/>
+        <result property="isMatchDrug" column="is_match_drug" jdbcType="INTEGER"/>
+        <result property="dietaryRequirements" column="dietary_requirements" jdbcType="VARCHAR"/>
+        <result property="specialRequirements" column="special_requirements" jdbcType="VARCHAR"/>
+        <result property="isFirst" column="is_first" jdbcType="INTEGER"/>
+        <result property="gender" column="gender" jdbcType="VARCHAR"/>
+        <result property="occupation" column="occupation" jdbcType="VARCHAR"/>
+        <result property="experience" column="experience" jdbcType="VARCHAR"/>
+        <result property="fieldOfInterest" column="field_of_interest" jdbcType="VARCHAR"/>
+        <result property="other" column="other" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="selectRegisterUserPage" resultMap="RegisterUserPageVOMap">
+        SELECT
+            rui.id,
+            rui.connect_id,
+            rui.name,
+            rui.surname,
+            rui.email,
+            rui.organization,
+            rui.mobile_phone,
+            rui.street,
+            rui.postal_code,
+            rui.status,
+            rui.country,
+            rui.bill_organization,
+            rui.bill_vat,
+            rui.bill_procurement,
+            rui.bill_street,
+            rui.bill_postal_code,
+            rui.bill_city,
+            rui.bill_status,
+            rui.bill_country,
+            rui.registration_type,
+            rui.registration_fee,
+            DATE_FORMAT(rui.registration_date, '%Y-%m-%d') AS registration_date,
+            rui.payment_method,
+            rui.payment_status,
+            rui.stripe_payment_intent_id,
+            rui.payment_amount,
+            rui.visa_name,
+            rui.visa_surname,
+            rui.visa_passport,
+            rui.visa_issue_time,
+            rui.visa_end_time,
+            rui.visa_time,
+            rui.visa_area,
+            rui.visa_is_need,
+            rui.deduction_code,
+            rui.pic_bank,
+            rui.actual_payment,
+            rui.register_label,
+            rui.review_status,
+            rui.reject_reason,
+            qs.registration_category,
+            qs.registration_document,
+            qs.registration_which_member,
+            qs.registration_code,
+            qs.is_match_drug,
+            qs.dietary_requirements,
+            qs.special_requirements,
+            qs.is_first,
+            qs.gender,
+            qs.occupation,
+            qs.experience,
+            qs.field_of_interest,
+            qs.other
+        FROM register_user_information rui
+        LEFT JOIN questionnaire_survey qs ON rui.connect_id = qs.id
+        WHERE 1=1
+        <if test="query.name != null and query.name != ''">
+            AND rui.name LIKE CONCAT('%', #{query.name}, '%')
+        </if>
+        <if test="query.surname != null and query.surname != ''">
+            AND rui.surname LIKE CONCAT('%', #{query.surname}, '%')
+        </if>
+        <if test="query.email != null and query.email != ''">
+            AND rui.email LIKE CONCAT('%', #{query.email}, '%')
+        </if>
+        <if test="query.organization != null and query.organization != ''">
+            AND rui.organization LIKE CONCAT('%', #{query.organization}, '%')
+        </if>
+        <if test="query.mobilePhone != null and query.mobilePhone != ''">
+            AND rui.mobile_phone LIKE CONCAT('%', #{query.mobilePhone}, '%')
+        </if>
+        <if test="query.status != null">
+            AND rui.status = #{query.status}
+        </if>
+        <if test="query.country != null and query.country != ''">
+            AND rui.country LIKE CONCAT('%', #{query.country}, '%')
+        </if>
+        <if test="query.registrationType != null and query.registrationType != ''">
+            AND rui.registration_type = #{query.registrationType}
+        </if>
+        <if test="query.paymentMethod != null and query.paymentMethod != ''">
+            AND rui.payment_method = #{query.paymentMethod}
+        </if>
+        <if test="query.paymentStatus != null and query.paymentStatus != ''">
+            AND rui.payment_status = #{query.paymentStatus}
+        </if>
+        <if test="query.visaName != null and query.visaName != ''">
+            AND rui.visa_name LIKE CONCAT('%', #{query.visaName}, '%')
+        </if>
+        <if test="query.visaPassport != null and query.visaPassport != ''">
+            AND rui.visa_passport LIKE CONCAT('%', #{query.visaPassport}, '%')
+        </if>
+        <if test="query.visaIsNeed != null">
+            AND rui.visa_is_need = #{query.visaIsNeed}
+        </if>
+        <if test="query.registrationCategory != null and query.registrationCategory != ''">
+            AND qs.registration_category = #{query.registrationCategory}
+        </if>
+        <if test="query.deductionCode != null and query.deductionCode != ''">
+            AND rui.deduction_code LIKE CONCAT('%', #{query.deductionCode}, '%')
+        </if>
+        ORDER BY rui.id DESC
+    </select>
+
+    <select id="selectRegisterUserDetail" resultMap="RegisterUserPageVOMap">
+        SELECT
+            rui.id,
+            rui.connect_id,
+            rui.name,
+            rui.surname,
+            rui.email,
+            rui.organization,
+            rui.mobile_phone,
+            rui.street,
+            rui.postal_code,
+            rui.status,
+            rui.country,
+            rui.bill_organization,
+            rui.bill_vat,
+            rui.bill_procurement,
+            rui.bill_street,
+            rui.bill_postal_code,
+            rui.bill_city,
+            rui.bill_status,
+            rui.bill_country,
+            rui.registration_type,
+            rui.registration_fee,
+            DATE_FORMAT(rui.registration_date, '%Y-%m-%d') AS registration_date,
+            rui.payment_method,
+            rui.payment_status,
+            rui.stripe_payment_intent_id,
+            rui.payment_amount,
+            rui.visa_name,
+            rui.visa_surname,
+            rui.visa_passport,
+            rui.visa_issue_time,
+            rui.visa_end_time,
+            rui.visa_time,
+            rui.visa_area,
+            rui.visa_is_need,
+            rui.deduction_code,
+            rui.pic_bank,
+            rui.actual_payment,
+            rui.register_label,
+            rui.review_status,
+            rui.reject_reason,
+            qs.registration_category,
+            qs.registration_document,
+            qs.registration_which_member,
+            qs.registration_code,
+            qs.is_match_drug,
+            qs.dietary_requirements,
+            qs.special_requirements,
+            qs.is_first,
+            qs.gender,
+            qs.occupation,
+            qs.experience,
+            qs.field_of_interest,
+            qs.other
+        FROM register_user_information rui
+        LEFT JOIN questionnaire_survey qs ON rui.connect_id = qs.id
+        WHERE rui.id = #{id}
+    </select>
+
+</mapper>

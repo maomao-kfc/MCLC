@@ -1,121 +1,281 @@
-<!-- 注册页面 -->
-
 <template>
   <div class="register-page">
-    <h2>用户注册</h2>
-    <!-- 若需要区分个人/团队，可显示不同表单 -->
-    <div v-if="registerType === 'personal'">
-      <h3>个人注册</h3>
+    <div class="lang-bar">
+      <button :class="['lang-btn', { active: currentLang === 'en' }]" @click="switchLang('en')">English</button>
+      <span class="divider">|</span>
+      <button :class="['lang-btn', { active: currentLang === 'zh' }]" @click="switchLang('zh')">简体中文</button>
     </div>
-    <div v-else>
-      <h3>团队注册</h3>
+    <div  class="register-banner">
+      <el-image class="hI" :src="objVal?.titleImage" />
     </div>
-
-    <form @submit.prevent="handleRegister">
-      <div class="form-item">
-        <label>账号：</label>
-        <input v-model="form.username" type="text" placeholder="请输入账号" required />
+    <div class="register-menu">
+      <div class="menu-items">
+        <div class="menu-item" :class="{ active: route.path === '/register/enroll' }" @click="goTo('/register/enroll')">{{ t('register.steps.enroll') }}</div>
+        <div class="menu-item" :class="{ active: route.path === '/register/consent' }" @click="goTo('/register/consent')">{{ t('register.steps.consent') }}</div>
+        <div class="menu-item" :class="{ active: route.path === '/register/contact' }" @click="goTo('/register/contact')">{{ t('register.steps.contact') }}</div>
+        <div class="menu-item" :class="{ active: route.path === '/register/signup' }" @click="goTo('/register/signup')">{{ t('register.steps.signup') }}</div>
+        <div class="menu-item" :class="{ active: route.path === '/register/confirm' }" @click="goTo('/register/confirm')">{{ t('register.steps.confirm') }}</div>
+        <div class="menu-item" :class="{ active: route.path === '/register/final' }" @click="goTo('/register/final')">{{ t('register.steps.final') }}</div>
       </div>
-      <div class="form-item">
-        <label>密码：</label>
-        <input v-model="form.password" type="password" placeholder="请输入密码" required />
-      </div>
-      <!-- 团队注册可额外加字段（如企业名称） -->
-      <div v-if="registerType === 'team'" class="form-item">
-        <label>企业名称：</label>
-        <input v-model="form.company" type="text" placeholder="请输入企业名称" />
-      </div>
-      <button type="submit" class="submit-btn">提交注册</button>
-    </form>
+    </div>
+    <div class="register-content">
+      <router-view />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-
+import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
-// 接收侧边栏传递的注册类型（个人/团队）
-const registerType = ref('personal')
-// 注册表单数据
-const form = ref({
-  username: '',
-  password: '',
-  company: '' // 团队注册专属
+const router = useRouter()
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useLangStore } from '@/stores/lang.js'
+import { useGuestStore } from '@/stores/guest.js'
+import { onMounted } from "vue";
+import { storeToRefs } from 'pinia'
+import { useRegisterStore } from '@/stores/register'
+import { ElMessage } from 'element-plus'
+
+const registerStore = useRegisterStore()
+const guestStore = useGuestStore()
+const { locale, t } = useI18n()
+const langStore = useLangStore()
+const currentLang = computed(() => langStore.currentLang)
+
+const switchLang = (lang) => {
+  langStore.setLang(lang)
+  locale.value = lang
+}
+const { hwList } = storeToRefs(guestStore)
+const objVal = computed(() => {
+  return  hwList.value?.[0]
+})
+onMounted(async () => {
+  await guestStore.gethwList()
 })
 
-onMounted(() => {
-  // 读取路由参数，区分个人/团队注册
-  if (route.query.type === 'team') {
-    registerType.value = 'team'
+const isEnrollCompleted = () => {
+  const enroll = registerStore.state.enroll
+  return enroll.firstName && enroll.lastName && enroll.email && enroll.registerType
+}
+
+const isConsentCompleted = () => {
+  const consent = registerStore.state.consent
+  return consent.agreePolicy1 && consent.agreePolicy2 && consent.agreeBadgeScan
+}
+
+const isContactCompleted = () => {
+  const contact = registerStore.state.contact
+  if (!contact.title || !contact.firstName || !contact.lastName || !contact.email || !contact.organization || !contact.phone || !contact.street || !contact.zipCode || !contact.city || !contact.country) {
+    return false
   }
-})
+  if (contact.hasBillingAddress) {
+    const billing = contact.billingAddress || {}
+    if (!billing.street || !billing.zipCode || !billing.city || !billing.country) {
+      return false
+    }
+  }
+  if (registerStore.state.enroll.registerType === '1') {
+    const members = contact.teamMembers || []
+    if (members.length === 0) return false
+    for (const m of members) {
+      if (!m.firstName || !m.lastName || !m.email || !m.phone) return false
+    }
+  }
+  return true
+}
 
-// 注册提交逻辑（预留后端接口对接）
-const handleRegister = async () => {
-  try {
-    // 1. 表单校验（前端）
-    if (!form.value.username || !form.value.password) {
-      alert('账号/密码不能为空！')
+const stepOrder = [
+  '/register/enroll',
+  '/register/consent',
+  '/register/contact',
+  '/register/signup',
+  '/register/confirm',
+  '/register/final'
+]
+
+const goTo = (path) => {
+  if (route.path === path) {
+    return
+  }
+
+  const currentIndex = stepOrder.indexOf(route.path)
+  const targetIndex = stepOrder.indexOf(path)
+
+  if (targetIndex <= currentIndex) {
+    router.push(path)
+    return
+  }
+
+  if (route.path === '/register/enroll') {
+    if (!isEnrollCompleted()) {
+      ElMessage.error(t('register.validation.enrollRequired'))
       return
     }
-
-    // 2. 对接后端接口（此处为预留位置）
-    // const res = await fetch('/api/register', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     type: registerType.value,
-    //     ...form.value
-    //   })
-    // })
-    // const data = await res.json()
-    // if (data.code === 200) {
-    //   alert('注册成功！')
-    //   router.push('/login') // 注册成功跳登录
-    // } else {
-    //   alert('注册失败：' + data.msg)
-    // }
-
-    // 前端临时模拟成功
-    alert('注册请求已提交（前端测试），账号：' + form.value.username)
-    form.value = { username: '', password: '', company: '' }
-  } catch (err) {
-    console.error('注册失败：', err)
-    alert('注册异常，请重试！')
   }
+  if (route.path === '/register/consent') {
+    if (!isEnrollCompleted()) {
+      ElMessage.error(t('register.validation.enrollRequired'))
+      return
+    }
+    if (!isConsentCompleted()) {
+      ElMessage.error(t('register.validation.consentRequired'))
+      return
+    }
+  }
+  if (route.path === '/register/contact') {
+    if (!isEnrollCompleted()) {
+      ElMessage.error(t('register.validation.enrollRequired'))
+      return
+    }
+    if (!isConsentCompleted()) {
+      ElMessage.error(t('register.validation.consentRequired'))
+      return
+    }
+    if (!isContactCompleted()) {
+      ElMessage.error(t('register.validation.contactRequired'))
+      return
+    }
+  }
+  if (path !== '/register/enroll' && path !== '/register/consent' && path !== '/register/contact') {
+    if (!isEnrollCompleted()) {
+      ElMessage.error(t('register.validation.enrollRequired'))
+      return
+    }
+    if (!isConsentCompleted()) {
+      ElMessage.error(t('register.validation.consentRequired'))
+      return
+    }
+    if (!isContactCompleted()) {
+      ElMessage.error(t('register.validation.contactRequired'))
+      return
+    }
+  }
+  router.push(path)
 }
 </script>
 
 <style scoped>
-.register-page {
-  width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 1px solid #eee;
-  border-radius: 8px;
+.lang-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 0;
 }
-.form-item {
-  margin: 15px 0;
+.lang-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px 14px;
+  font-size: 14px;
+  color: #333;
+  transition: color 0.2s;
+}
+.lang-btn.active {
+  color: #114C9A;
+  font-weight: 600;
+}
+.lang-btn:hover {
+  color: #114C9A;
+}
+.divider {
+  margin: 0 2px;
+  color: #bdc3c7;
+}
+:deep(#app){
+}
+.register-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10%;
+  box-sizing: border-box;
+  padding-top: 0;
+  margin: 0;
+}
+.register-menu {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 12px 0;
 }
-.form-item label {
-  width: 80px;
-}
-.form-item input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-.submit-btn {
+.hI{
   width: 100%;
-  padding: 10px;
-  background: #409eff;
-  color: white;
-  border: none;
+  height: 100%;
+  object-fit: cover;
+}
+.menu-items {
+  display: flex;
+  gap: 40px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+.menu-items::-webkit-scrollbar {
+  height: 4px;
+}
+.menu-items::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+.menu-items::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.menu-item {
+  padding: 8px 16px;
   border-radius: 4px;
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+  transition: all 0.3s;
+  white-space: nowrap;
+  flex: 1;
+  text-align: center;
   cursor: pointer;
+}
+.menu-item:hover {
+  background: #f5f5f5;
+  color: #7d7ef4;
+}
+.menu-item.active {
+  background: #7d7ef4;
+  color: #fff;
+}
+.register-content {
+  width: 100%;
+  flex: 1;
+  background: #f7f7f7;
+  padding: 20px 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .register-page {
+    padding: 0;
+  }
+  .menu-items {
+    gap: 0;
+    padding: 0 8px;
+  }
+  .menu-item {
+    padding: 8px 10px;
+    font-size: 12px;
+    flex: none;
+    white-space: nowrap;
+  }
+  .register-content {
+    padding: 10px 0;
+  }
 }
 </style>

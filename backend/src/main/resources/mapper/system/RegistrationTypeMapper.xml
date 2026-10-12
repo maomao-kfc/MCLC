@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youlai.boot.system.mapper.RegistrationTypeMapper">
+
+    <!-- 获取注册类型分页列表 -->
+    <select id="getRegistrationTypePage" resultType="com.youlai.boot.system.model.bo.RegistrationTypeBo">
+        SELECT
+            t1.id,
+            t1.field_name,
+            t1.normal_valid_date,
+            t1.deadline_date,
+            t1.normal_amount,
+            t1.deadline_amount,
+            t1.sort,
+            t1.country_type
+        FROM
+            registration_type t1
+        WHERE
+            1 = 1
+        <if test="queryParams.fieldName != null and queryParams.fieldName != ''">
+            AND t1.field_name LIKE CONCAT('%',#{queryParams.fieldName},'%')
+        </if>
+        <if test="queryParams.countryType != null and queryParams.countryType != ''">
+            AND t1.country_type = #{queryParams.countryType}
+        </if>
+        ORDER BY
+            t1.sort ASC,
+            t1.id DESC
+    </select>
+
+</mapper>

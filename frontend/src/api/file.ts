@@ -9,6 +9,7 @@ const FileAPI = {
       method: "post",
       data: formData,
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 3600000, // 1小时，与nginx/backend超时对齐，支持大文件上传
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total) {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -21,12 +22,13 @@ const FileAPI = {
   /** 上传文件（传入 File） */
   uploadFile(file: File) {
     const formData = new FormData();
-    formData.append("file", file);
-    return request<any, FileInfo>({
+    formData.append("file1", file);
+    return request<any, any>({
       url: "/api/v1/files",
       method: "post",
       data: formData,
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 3600000, // 1小时，与nginx/backend超时对齐，支持大文件上传
     });
   },
 

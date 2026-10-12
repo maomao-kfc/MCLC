@@ -22,6 +22,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProduction = mode === "production";
 
   return {
+    base: "/admin/",
     resolve: {
       // Vite 8 新特性：自动读取 tsconfig.json 中的 paths 别名
       tsconfigPaths: true,

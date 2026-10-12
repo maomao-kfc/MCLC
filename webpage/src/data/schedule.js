@@ -37,13 +37,13 @@ export const scheduleData = {
 			{
 				id: 'keynote',
 				title: '主旨报告',
-				titleEn: 'Keynote speech',
+				titleEn: 'Keynote Speech',
 				chair: '王晓瑛, 陈志',
 				chairEn: 'Chair: Wang Xiaoying, Chen Zhi',
 				items: [{
 						time: '08:30-08:50',
 						type: '主旨报告',
-						typeEn: 'Keynote speech',
+						typeEn: 'Keynote Speech',
 						topic: '糖尿病的“防-筛-诊-治”全周期近视管理',
 						topicEn: 'Myopia full cycle management',
 						speaker: 'Xingtao Zhou',
@@ -53,7 +53,7 @@ export const scheduleData = {
 					{
 						time: '08:50-09:10',
 						type: '主旨报告',
-						typeEn: 'Keynote speech',
+						typeEn: 'Keynote Speech',
 						topic: '近视预防计算',
 						topicEn: 'Myopia prediction calculators',
 						speaker: 'James Wolffsohn',
@@ -63,7 +63,7 @@ export const scheduleData = {
 					{
 						time: '09:10-09:30',
 						type: '主旨报告',
-						typeEn: 'Keynote speech',
+						typeEn: 'Keynote Speech',
 						topic: 'Biomimetic precorneal tear film',
 						topicEn: 'Biomimetic precorneal tear film',
 						speaker: '吕帆',
@@ -73,7 +73,7 @@ export const scheduleData = {
 					{
 						time: '09:30-09:50',
 						type: '主旨报告',
-						typeEn: 'Keynote speech',
+						typeEn: 'Keynote Speech',
 						topic: '高度近视的研究',
 						topicEn: 'Insight on high myopia research',
 						speaker: 'Fan Lu',

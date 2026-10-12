@@ -50,6 +50,8 @@ public interface RedisConstants {
         String SMS_REGISTER_CODE = "captcha:sms_register:{}";// 注册短信验证码
         String MOBILE_CODE = "captcha:mobile:{}";            // 绑定、更换手机验证码
         String EMAIL_CODE = "captcha:email:{}";              // 邮箱验证码
+        String EMAIL_LOGIN_CODE = "captcha:email_login:{}";  // 登录邮箱验证码
+        String PAPER_QUERY_CODE = "captcha:paper_query:{}";  // 投稿查询邮箱验证码
     }
 
     /**

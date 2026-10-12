@@ -29,7 +29,7 @@ export const usePermissionStore = defineStore("permission", () => {
   // 动态路由是否已生成
   const isRouteGenerated = ref(false);
 
-  /** 生成动态路由 */
+/** 生成动态路由 */
   async function generateRoutes(): Promise<RouteRecordRaw[]> {
     try {
       const data = await MenuAPI.getRoutes(); // 获取当前登录人的菜单路由

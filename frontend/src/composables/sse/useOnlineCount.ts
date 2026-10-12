@@ -15,7 +15,7 @@ function createOnlineCountComposable() {
   const lastUpdateTime = ref(0);
 
   // SSE 客户端
-  const sse = useSse();
+  // const sse = useSse();
 
   // 取消订阅函数
   let unsubscribe: (() => void) | null = null;
@@ -35,10 +35,10 @@ function createOnlineCountComposable() {
    */
   const initialize = () => {
     // 建立 SSE 连接
-    sse.connect();
+    // sse.connect();
 
     // 订阅在线用户计数事件
-    unsubscribe = sse.on("online-count", handleOnlineCountMessage);
+    // unsubscribe = sse.on("online-count", handleOnlineCountMessage);
   };
 
   /**
@@ -60,8 +60,8 @@ function createOnlineCountComposable() {
     // 状态
     onlineUserCount: readonly(onlineUserCount),
     lastUpdateTime: readonly(lastUpdateTime),
-    isConnected: sse.isConnected,
-    connectionState: sse.connectionState,
+    // isConnected: sse.isConnected,
+    // connectionState: sse.connectionState,
 
     // 方法
     initialize,
@@ -98,9 +98,9 @@ export function useOnlineCount(options: { autoInit?: boolean } = {}) {
   if (autoInit && instance) {
     onMounted(() => {
       // 防止重复初始化：只有在未连接时才尝试初始化
-      if (!globalInstance!.isConnected.value) {
-        globalInstance!.initialize();
-      }
+      // if (!globalInstance!.isConnected.value) {
+      //   globalInstance!.initialize();
+      // }
     });
 
     // 注意：组件卸载时不关闭连接，保持全局连接
