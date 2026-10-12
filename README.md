@@ -879,29 +879,64 @@ mysql -u root -p meeting_admin < mail_send_record_delivery_increment.sql
 
 ## 九、配置文件说明
 
-### 后端配置
+> **⚠️ 敏感文件安全策略**：`application-dev.yml` 和 `application-prod.yml` 包含数据库密码、API密钥等敏感信息，已被 `.gitignore` 排除，**不会提交到 GitHub**。
+> 新开发者请复制对应的 `.template` 模板文件，重命名后填入真实值即可使用。
+
+### 9.1 后端配置文件
+
+| 文件 | Git 跟踪 | 说明 |
+|------|----------|------|
+| `application.yml` | ✅ 是 | 主配置，激活 dev profile、文件上传限制、项目版本 |
+| `application-dev.yml` | ❌ 否（敏感） | 开发环境配置（MySQL、Redis、邮件、支付、OSS、短信等） |
+| `application-dev.yml.template` | ✅ 是 | 开发环境配置**模板**，所有敏感值已替换为占位符 |
+| `application-prod.yml` | ❌ 否（敏感） | 生产环境配置 |
+| `application-prod.yml.template` | ✅ 是 | 生产环境配置**模板**，所有敏感值已替换为占位符 |
+
+**使用方法**：
+
+```bash
+cd backend/src/main/resources
+
+# 开发环境
+cp application-dev.yml.template application-dev.yml
+# 编辑 application-dev.yml，填入真实的数据库密码、邮件授权码、API密钥等
+
+# 生产环境
+cp application-prod.yml.template application-prod.yml
+# 编辑 application-prod.yml，填入生产环境的真实配置
+```
+
+### 9.2 后端配置段详解
+
+| 配置段 | 所在文件 | 说明 | 敏感字段 |
+|--------|----------|------|----------|
+| `server.port` | dev/prod | 服务端口（dev:8000, prod:8000） | — |
+| `spring.datasource` | dev/prod | MySQL 数据源（URL、用户名、密码） | ⚠️ `password` |
+| `spring.data.redis` | dev/prod | Redis 连接（host、port、密码） | ⚠️ `password` |
+| `spring.mail` | dev/prod | SMTP 邮件发送（host、port、用户名、授权码） | ⚠️ `password` |
+| `spring.mail.imap` | dev/prod | IMAP 退信检测（host、port、cron、自动重发） | ⚠️ `password` |
+| `spring.mail.from` | dev/prod | 邮件发送者地址 | — |
+| `stripe` | dev | Stripe 支付（API Key、Publishable Key、Webhook Secret） | ⚠️ `api-key` |
+| `alipay` | dev | 支付宝支付（App ID、私钥、公钥、回调地址） | ⚠️ `private-key`、`alipay-public-key` |
+| `wechat-pay` | dev | 微信支付（App ID、商户号、V3密钥、证书路径） | ⚠️ `api-v3-key`、`mch-serial-no` |
+| `oss.aliyun` | dev/prod | 阿里云 OSS 对象存储（Endpoint、AccessKey、Bucket） | ⚠️ `access-key-id`、`access-key-secret` |
+| `oss.minio` | dev/prod | MinIO 对象存储（Endpoint、AccessKey、Bucket） | ⚠️ `access-key`、`secret-key` |
+| `sms.aliyun` | dev/prod | 阿里云短信（AccessKey、模板ID） | ⚠️ `accessKeyId`、`accessKeySecret` |
+| `security.jwt.secret-key` | dev/prod | JWT 签名密钥（HS256 至少32字符） | ⚠️ `secret-key` |
+| `jodconverter.local` | dev/prod | LibreOffice DOCX 转 PDF（enabled、office-home） | — |
+| `confirm-review` | dev | 专家审批链接地址 | — |
+| `check-in` | dev | 签到链接地址 | — |
+| `wx.miniapp` | dev/prod | 微信小程序配置（App ID、Secret） | ⚠️ `appid`/`secret` |
+| `xxl-job` | dev/prod | XXL-Job 定时任务（默认关闭） | — |
+| `captcha` | dev/prod | 验证码配置（类型、尺寸、有效期） | — |
+
+### 9.3 前端配置文件
 
 | 文件 | 说明 |
 |------|------|
-| `application.yml` | 主配置，激活 dev profile |
-| `application-dev.yml` | 开发环境配置（MySQL、Redis、邮件、Stripe、支付回调地址） |
-| `application-prod.yml` | 生产环境配置 |
-
-### 邮件相关配置
-
-| 配置段 | 说明 |
-|--------|------|
-| `spring.mail` | SMTP 邮件发送配置（host、port、username、password、from） |
-| `spring.mail.imap` | IMAP 退信检测配置（enabled、host、port、cron、auto-resend、admin-alert-emails） |
-| `jodconverter.local` | LibreOffice DOCX 转 PDF 配置 |
-
-### 前端配置
-
-| 文件 | 说明 |
-|------|------|
-| `webpage/vite.config.js` | Portal Vite 配置，代理 `/dev-api` 到后端 |
+| `webpage/vite.config.js` | Portal Vite 配置，代理 `/dev-api` 到后端 `localhost:8000` |
 | `frontend/vite.config.ts` | Admin Vite 配置，base 路径 `/admin/` |
-| `frontend/.env.development` | Admin 开发环境变量 |
+| `frontend/.env.development` | Admin 开发环境变量（API 地址、端口等） |
 | `frontend/.env.production` | Admin 生产环境变量 |
 
 ---

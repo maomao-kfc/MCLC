@@ -8,6 +8,40 @@
 
 ## 2026-10-12
 
+### [Enhancement] 配置文件模板化与敏感信息安全策略
+
+- **目的：**
+  - 将 `application-dev.yml` 和 `application-prod.yml` 中的敏感信息（数据库密码、API密钥、邮箱授权码等）从 Git 仓库中隔离
+  - 创建 `.template` 模板文件供新开发者参考，所有敏感值替换为占位符（如 `YOUR_MYSQL_PASSWORD`）
+  - 完善 README.md 配置文件说明章节，增加敏感字段标注和使用说明
+
+- **涉及文件：**
+  - `README.md` — 第九章配置文件说明章节重写，增加 9.1/9.2/9.3 三个子章节
+  - `backend/src/main/resources/application-dev.yml.template` — 开发环境配置模板（新增）
+  - `backend/src/main/resources/application-prod.yml.template` — 生产环境配置模板（新增）
+  - `.gitignore` — 已在之前提交中添加 `**/application-dev.yml` 和 `**/application-prod.yml` 排除规则
+
+- **修改逻辑：**
+  - README.md 第九章重写为三个子章节：9.1 后端配置文件（含 Git 跟踪状态和模板使用方法）、9.2 后端配置段详解（含敏感字段标注 ⚠️）、9.3 前端配置文件
+  - 模板文件保留完整结构和注释，所有敏感值替换为语义化占位符（`YOUR_MYSQL_PASSWORD`、`YOUR_ST_API_KEY`、`YOUR_AL_PRIVATE_KEY` 等）
+  - 回调地址改为 localhost 占位符，避免暴露服务器 IP
+
+- **影响范围：**
+  - 文档：README.md 配置文件说明更完整，新开发者可快速上手
+  - 安全：敏感配置文件已被 .gitignore 排除，模板文件不含任何真实密钥
+  - 兼容：模板文件为 `.template` 后缀，不影响现有配置文件使用
+
+- **验证方式：**
+  - `git status` 确认 `application-dev.yml` 和 `application-prod.yml` 不在跟踪列表
+  - 模板文件中搜索不到任何真实密钥、密码、IP 地址
+  - README.md 配置文件说明章节内容完整
+
+- **验证结果：** 待确认
+
+---
+
+## 2026-10-12
+
 ### [Feature] 论文投稿功能全栈实现（全英文过滤+单词计数+状态查询）
 
 - **目的：**
