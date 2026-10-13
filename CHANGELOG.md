@@ -8,6 +8,34 @@
 
 ## 2026-10-13
 
+### [Fix] 启动前清理残留 LibreOffice 进程，修复 JODConverter profile 目录删除失败
+
+- **目的：**
+  - 上次应用异常退出（IDEA 强制 Stop / taskkill /F）时，JODConverter 启动的 soffice 子进程未被正确终止，成为孤儿进程
+  - 残留进程锁住 profile 目录中的 `extensions.pmap` 文件，导致下次启动时 JODConverter 清理旧 profile 目录失败
+  - 报错：`RetryTimeoutException: FileSystemException: extensions.pmap: 另一个程序正在使用此文件`（3个端口 2002/2003/2004 各一次 ERROR）
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/YouLaiBootApplication.java` — 修改（新增 `killResidualSofficeProcesses()` 方法）
+
+- **修改逻辑：**
+  - 在 `main()` 方法中 `SpringApplication.run()` 之前调用 `killResidualSofficeProcesses()`
+  - 仅 Windows 环境执行（Linux Docker 环境每次全新启动，无此问题）
+  - 通过端口 2002/2003/2004 精确定位 JODConverter 管理的 soffice 进程（`netstat -ano` 查 PID → `taskkill /F` 终止），避免误杀用户正在使用的 LibreOffice 桌面实例
+  - 清理失败不影响启动，JODConverter 自身有 `connect_or_kill` 回退策略
+
+- **影响范围：**
+  - 后端：消除启动时的 3 个 ERROR 日志，LibreOffice 进程池正常初始化
+  - 无功能影响：PDF 导出功能不受影响
+
+- **验证方式：**
+  - 先制造残留场景（启动后 taskkill /F 强杀 Java 进程，留下 6 个孤儿 soffice 进程）
+  - `mvn clean spring-boot:run` 启动，确认 profile 目录删除成功（仅 WARN 无 ERROR），3 个 LibreOffice 端口全部 Connected
+
+- **验证结果：** 成功（`Started YouLaiBootApplication in 15.596 seconds`，无 `Could not delete` ERROR）
+
+---
+
 ### [Fix] 删除 hotel 重复包及残留 Mapper XML 修复 Bean 名冲突启动失败
 
 - **目的：**
