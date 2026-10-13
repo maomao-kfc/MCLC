@@ -6,6 +6,96 @@
 
 ---
 
+## 2026-10-13
+
+### [Fix] 删除 hotel 重复包及残留 Mapper XML 修复 Bean 名冲突启动失败
+
+- **目的：**
+  - `com.youlai.boot.hotel.controller.HotelController` 与 `com.youlai.boot.portal.controller.HotelController` 产生 Spring Bean 名冲突（`ConflictingBeanDefinitionException: bean name 'hotelController'`），项目启动失败
+  - hotel 包为代码生成器产生的残留代码（@author dearth），仅内部互相引用，无外部 import，无业务逻辑；真正的酒店管理实现在 portal 包
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/hotel/controller/HotelController.java` — 删除（生成器残留）
+  - `backend/src/main/java/com/youlai/boot/hotel/service/HotelService.java` — 删除（生成器残留）
+  - `backend/src/main/java/com/youlai/boot/hotel/service/impl/HotelServiceImpl.java` — 删除（生成器残留）
+  - `backend/src/main/java/com/youlai/boot/hotel/mapper/HotelMapper.java` — 删除（生成器残留）
+  - `backend/src/main/java/com/youlai/boot/hotel/model/dto/HotelPageQuery.java` — 删除（生成器残留）
+  - `backend/src/main/java/com/youlai/boot/hotel/model/entity/Hotel.java` — 删除（生成器残留）
+  - `backend/src/main/resources/mapper/HotelMapper.xml` — 删除（引用已删除的 hotel 实体类，导致 MyBatis `ClassNotFoundException`）
+
+- **修改逻辑：**
+  - 确认 hotel 包6个 Java 文件无外部 import 引用
+  - 确认真正的酒店业务在 `backend/src/main/java/com/youlai/boot/portal/controller/HotelController.java`（API 路径 `/api/v1/hotel`）
+  - `git rm -r -f` 删除整个 hotel 包
+  - 启动后发现 `HotelMapper.xml` 仍引用已删除实体，`git rm -f` 删除该 XML
+  - `mvn clean spring-boot:run` 清理 target 残留 class 后重新启动
+
+- **影响范围：**
+  - 后端：消除 Bean 名冲突和 MyBatis 类解析异常，项目可正常启动
+  - 无业务影响：删除的文件不含业务逻辑，无外部引用
+
+- **验证方式：**
+  - `mvn clean spring-boot:run` 启动成功（`Started YouLaiBootApplication in 10.699 seconds`，Tomcat 运行于 8000 端口）
+
+- **验证结果：** 成功
+
+---
+
+### [Fix] 删除 meetingSchedule 包下4个空壳 Java 文件修复编译失败
+
+- **目的：**
+  - `backend/src/main/java/com/youlai/boot/meetingSchedule/controller/MeetingScheduleController.java` 类名小写（meetingScheduleController）与文件名大写（MeetingScheduleController）不匹配，导致 `java: 类 meetingScheduleController 是公共的, 应在名为 meetingScheduleController.java` 编译错误，项目启动失败
+  - 该文件及同包下3个 VO 文件均为无任何业务代码的空壳文件，真正的会议日程 Controller 位于 `com.youlai.boot.portal.controller.MeetingScheduleController`
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/meetingSchedule/controller/MeetingScheduleController.java` — 删除（空壳，类名小写不匹配）
+  - `backend/src/main/java/com/youlai/boot/meetingSchedule/model/vo/SessionVO.java` — 删除（空壳）
+  - `backend/src/main/java/com/youlai/boot/meetingSchedule/model/vo/MeetingScheduleVO.java` — 删除（空壳）
+  - `backend/src/main/java/com/youlai/boot/meetingSchedule/model/vo/AgendaItemVO.java` — 删除（空壳）
+
+- **修改逻辑：**
+  - 确认4个文件内容均为空壳（仅 package 声明+空类体），无任何字段、方法、注解
+  - 确认无其他代码引用 `com.youlai.boot.meetingSchedule` 包
+  - 确认真正的 Controller 在 `backend/src/main/java/com/youlai/boot/portal/controller/MeetingScheduleController.java`（API 路径 `/api/v1/meetingSchedule`）
+  - `git rm -f` 删除4个空壳文件
+
+- **影响范围：**
+  - 后端：消除编译错误，项目可正常启动
+  - 无业务影响：删除的文件不含任何业务代码，无外部引用
+
+- **验证方式：**
+  - `mvn compile -q` 编译通过（无错误输出）
+
+- **验证结果：** 成功
+
+---
+
+### [Enhancement] 日程板块名称英文样式对齐主持人英文样式
+
+- **目的：**
+  - 会议日程页面板块名称（session-title-en）的英文样式此前为 font-size:12px 且不加粗，与中文（font-size:15px, font-weight:700）差异明显
+  - 主持人英文（chair-en）此前已统一为 font-size:15px + font-weight:700，板块名称英文未同步，中英文视觉权重不一致可能让外国参会者感到不被尊重
+  - 将板块名称英文样式对齐主持人英文样式，确保中英文视觉权重一致
+
+- **涉及文件：**
+  - `webpage/src/pages/Schedule.vue` — `.session-header-row .session-title-en` 样式规则
+
+- **修改逻辑：**
+  - `.session-title-en` 从 `font-size:12px; opacity:0.85; margin-top:2px` 改为 `font-size:15px; font-weight:700; opacity:0.85; margin-top:2px`
+  - 修改后与 `.chair-en` 样式完全一致（font-size:15px, font-weight:700, opacity:0.85, margin-top:2px）
+
+- **影响范围：**
+  - 网页端日程页面：所有板块标题行的英文名称字号从12px增大到15px并加粗，与中文名称视觉权重一致
+  - 不影响其他页面和功能
+
+- **验证方式：**
+  - 重读文件确认 `.session-title-en` 与 `.chair-en` 样式属性完全一致
+  - 浏览器打开日程页面，板块名称中英文显示同字号同加粗
+
+- **验证结果：** 文件重读确认样式一致；浏览器视觉验证未执行
+
+---
+
 ## 2026-10-12
 
 ### [Enhancement] 配置文件模板化与敏感信息安全策略

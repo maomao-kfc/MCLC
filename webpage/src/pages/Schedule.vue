@@ -701,7 +701,8 @@ const openAddModal = () => {
   font-weight: 700;
 }
 .session-header-row .session-title-en {
-  font-size: 12px;
+  font-size: 15px;
+  font-weight: 700;
   opacity: 0.85;
   margin-top: 2px;
 }
