@@ -685,16 +685,18 @@ const openAddModal = () => {
 .session-header-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   background: linear-gradient(90deg, #7952b3, #9d75d6);
   color: #fff;
   border-bottom: 1px solid #ddd;
-  padding: 10px 12px;
+  padding: 10px 0;
 }
 .session-header-row .session-title-wrap {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 60%;
+  padding-left: 6px;
+  box-sizing: border-box;
 }
 .session-header-row .session-title {
   font-size: 15px;
@@ -710,16 +712,21 @@ const openAddModal = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 15%;
+  padding-left: 6px;
+  box-sizing: border-box;
 }
 .session-header-row .session-chair .chair-zh {
   font-size: 15px;
   font-weight: 700;
+  white-space: nowrap;
 }
 .session-header-row .session-chair .chair-en {
   font-size: 15px;
   font-weight: 700;
   opacity: 0.85;
   margin-top: 2px;
+  white-space: nowrap;
 }
 /* 开幕式/闭幕式板块标题背景色 */
 .session-header-ceremony {
@@ -731,9 +738,11 @@ const openAddModal = () => {
 }
 .session-header-ceremony .session-title-wrap {
   align-items: center;
+  width: auto;
 }
 .session-header-ceremony .session-chair {
   margin-top: 2px;
+  width: auto;
 }
 /* 特殊条目行 - 独占整行（单单元格） */
 .special-full-row {

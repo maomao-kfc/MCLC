@@ -8,6 +8,33 @@
 
 ## 2026-10-13
 
+### [Enhancement] 日程板块标题行主持人位置与讲者表头列对齐
+
+- **目的：**
+  - 板块标题行中的"主持人"原靠最右侧显示（`justify-content: space-between`），视觉上与下方表格列无关联
+  - 将主持人移动到与表头"讲者/Speaker"列对齐的位置，提升表格整体视觉一致性
+  - 修复主持人英文行因列宽不足导致 "Chair：zhangHua" 换行问题
+
+- **涉及文件：**
+  - `webpage/src/pages/Schedule.vue` — 修改（仅CSS，5处样式调整）
+
+- **修改逻辑：**
+  - `.session-header-row`：去掉水平 padding（`10px 12px` → `10px 0`），去掉 `justify-content: space-between`，使子元素起点与表格列一致
+  - `.session-title-wrap`：设 `width: 60%`（=时间12%+类型10%+题目38%），加 `padding-left: 6px` 与 th 对齐
+  - `.session-chair`：设 `width: 15%`（=讲者列宽度），加 `padding-left: 6px` 与 th 对齐
+  - `.session-header-ceremony .session-title-wrap / .session-chair`：覆盖 `width: auto`，保持开幕式/闭幕式居中显示不受影响
+  - `.chair-zh / .chair-en`：加 `white-space: nowrap`，防止主持人中英文因15%列宽不足而换行（如"Chair：zhangHua"折为两行）
+
+- **影响范围：**
+  - 前端：日程页面板块标题行布局调整，主持人与讲者列对齐；开幕式/闭幕式居中显示不变
+
+- **验证方式：**
+  - 代码审查 + git diff 校验（未执行浏览器视觉验证）
+
+- **验证结果：** 代码实现完成，视觉链路未验证
+
+---
+
 ### [Fix] 启动前清理残留 LibreOffice 进程，修复 JODConverter profile 目录删除失败
 
 - **目的：**
