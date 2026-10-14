@@ -39,7 +39,7 @@
 
         <!-- 对象存储 -->
         <minio.version>8.5.10</minio.version>
-        <okhttp3.version>4.8.1</okhttp3.version>
+        <okhttp3.version>4.12.0</okhttp3.version>
 
         <aliyun-sdk-oss.version>3.16.3</aliyun-sdk-oss.version>
 
@@ -244,6 +244,13 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>${minio.version}</version>
+        </dependency>
+
+        <!-- OkHttp（MinIO 8.5.x 要求 4.x，显式声明避免被传递依赖降级为 3.x） -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp3.version}</version>
         </dependency>
 
         <!-- 阿里云 OSS 对象存储 -->

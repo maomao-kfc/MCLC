@@ -767,7 +767,7 @@ docker stop mclc-admin 2>/dev/null || true
 docker rm mclc-admin 2>/dev/null || true
 
 # 用新上传的 jar 包替换当前 jar
-cp youlai-boot.jar.bak26 youlai-boot.jar
+cp youlai-boot.jar.bak26 youlai-boot.jar 
 
 # 重建镜像 —— 两条命令根据情况选择：
 docker build -t mclc-admin:latest .
@@ -808,7 +808,8 @@ docker run -d \
   --restart unless-stopped \
   mclc-admin:latest
 ```
-
+# 查看日志确认启动成功（Ctrl+C 退出日志跟踪）
+docker logs -f mclc-admin
 ---
 
 ## 八、数据库
