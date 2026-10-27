@@ -49,10 +49,17 @@
           <div class="payment-link-area">
             <a :href="paymentLink" target="_blank" class="payment-link-btn">{{ t('register.clickToPay') }}</a>
           </div>
+
+          <!-- 付款后上传凭证提醒（醒目，防用户漏看下方凭证区） -->
+          <div class="proof-notice" @click="scrollToProof">
+            <span class="proof-notice-icon">⚠️</span>
+            <span class="proof-notice-text">{{ t('register.proofNotice') }}</span>
+            <span class="proof-notice-arrow">↓</span>
+          </div>
         </div>
 
         <!-- 支付凭证上传区 -->
-        <div class="proof-section">
+        <div class="proof-section" id="proof-section">
           <div class="proof-title">{{ t('register.proofUploadTitle') }}</div>
           <p class="proof-tip">{{ t('register.proofUploadTip') }}</p>
 
@@ -138,7 +145,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ElButton, ElInput, ElMessage } from 'element-plus'
+import { ElButton, ElInput, ElMessage, ElMessageBox } from 'element-plus'
 import { useRegisterStore } from '@/stores/register'
 import { useUserStore } from '@/stores/user'
 import { getDiscountConfigurationList } from '@/api/discountConfiguration'
@@ -428,7 +435,32 @@ const handleBack = () => {
   router.push('/register/signup')
 }
 
+// 滚动到凭证上传区
+const scrollToProof = () => {
+  document.getElementById('proof-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 const handleConfirm = async () => {
+  // 需付款但未提交凭证时，弹窗提醒用户先上传凭证
+  if (!totalIsZero.value && !proofStatus.value) {
+    try {
+      await ElMessageBox.confirm(
+        t('register.proofMissingConfirm'),
+        t('register.proofMissingTitle'),
+        {
+          confirmButtonText: t('register.proofGoUpload'),
+          cancelButtonText: t('register.proofSkipContinue'),
+          type: 'warning'
+        }
+      )
+      // 用户选择去上传凭证，滚动到凭证区并中止
+      scrollToProof()
+      return
+    } catch {
+      // 用户选择继续，放行
+    }
+  }
+
   registerStore.setSignupData({
     ...registerStore.state.signup,
     registerLabel: registerStore.state.signup.registerTypeName
@@ -605,6 +637,49 @@ const handleConfirm = async () => {
 .payment-link-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* 付款后上传凭证提醒条 */
+.proof-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.proof-notice:hover {
+  background: #fff1cc;
+  box-shadow: 0 2px 10px rgba(250, 173, 20, 0.25);
+}
+
+.proof-notice-icon {
+  font-size: 16px;
+}
+
+.proof-notice-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d46b08;
+  line-height: 1.4;
+}
+
+.proof-notice-arrow {
+  font-size: 18px;
+  font-weight: 700;
+  color: #d46b08;
+  animation: bounce-down 1.2s infinite;
+}
+
+@keyframes bounce-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
 }
 
 /* ========== 支付凭证上传区 ========== */
