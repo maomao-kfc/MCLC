@@ -249,7 +249,7 @@ const handleSubmitProof = async () => {
   proofSubmitting.value = true
   try {
     const res = await submitPaymentProof(proofFile.value, {
-      registrationId: Number(id),
+      registrationId: id,
       declaredPayTime: proofPayTime.value,
       declaredAmount: proofAmount.value,
       declaredTradeNo: proofTradeNo.value || undefined,
