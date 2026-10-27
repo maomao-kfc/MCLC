@@ -100,9 +100,12 @@ CREATE TABLE IF NOT EXISTS reconciliation_record (
 --               route_name, route_path, component, perm, always_show, keep_alive,
 --               visible, sort, icon, redirect, create_time, update_time, params
 -- -----------------------------------------------------------
--- 5.1 支付凭证审核页面菜单
+-- 5.1 支付凭证审核页面菜单(注意: M菜单不挂perm, list权限由B按钮2903承载)
 INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
-VALUES (2900, 2807, '0,2807', '支付凭证审核', 'M', 'PaymentProof', 'paymentProof', 'portal/paymentProof/index', 'sys:paymentProof:list', 0, 1, 1, 60, 'Money', NULL, NOW(), NOW());
+VALUES (2900, 2807, '0,2807', '支付凭证审核', 'M', 'PaymentProof', 'paymentProof', 'portal/paymentProof/index', NULL, 0, 1, 1, 60, 'Money', NULL, NOW(), NOW());
+
+INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
+VALUES (2903, 2900, '0,2807,2900', '凭证列表查询', 'B', NULL, NULL, NULL, 'sys:paymentProof:list', 0, 1, 1, 0, NULL, NULL, NOW(), NOW());
 
 INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
 VALUES (2901, 2900, '0,2807,2900', '凭证审核', 'B', NULL, NULL, NULL, 'sys:paymentProof:review', 0, 1, 1, 1, NULL, NULL, NOW(), NOW());
@@ -110,9 +113,12 @@ VALUES (2901, 2900, '0,2807,2900', '凭证审核', 'B', NULL, NULL, NULL, 'sys:p
 INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
 VALUES (2902, 2900, '0,2807,2900', '线下支付登记', 'B', NULL, NULL, NULL, 'sys:paymentProof:offline', 0, 1, 1, 2, NULL, NULL, NOW(), NOW());
 
--- 5.2 对账管理页面菜单
+-- 5.2 对账管理页面菜单(注意: M菜单不挂perm, list权限由B按钮2913承载)
 INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
-VALUES (2910, 2807, '0,2807', '对账管理', 'M', 'Reconciliation', 'reconciliation', 'portal/reconciliation/index', 'sys:reconciliation:list', 0, 1, 1, 61, 'Document', NULL, NOW(), NOW());
+VALUES (2910, 2807, '0,2807', '对账管理', 'M', 'Reconciliation', 'reconciliation', 'portal/reconciliation/index', NULL, 0, 1, 1, 61, 'Document', NULL, NOW(), NOW());
+
+INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
+VALUES (2913, 2910, '0,2807,2910', '对账列表查询', 'B', NULL, NULL, NULL, 'sys:reconciliation:list', 0, 1, 1, 0, NULL, NULL, NOW(), NOW());
 
 INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_path, component, perm, always_show, keep_alive, visible, sort, icon, redirect, create_time, update_time)
 VALUES (2911, 2910, '0,2807,2910', '导入对账表', 'B', NULL, NULL, NULL, 'sys:reconciliation:import', 0, 1, 1, 1, NULL, NULL, NOW(), NOW());
@@ -121,4 +127,4 @@ INSERT INTO sys_menu (id, parent_id, tree_path, name, type, route_name, route_pa
 VALUES (2912, 2910, '0,2807,2910', '人工确认匹配', 'B', NULL, NULL, NULL, 'sys:reconciliation:confirm', 0, 1, 1, 2, NULL, NULL, NOW(), NOW());
 
 -- 5.3 为 ADMIN 角色授权(role_id=2)
-INSERT INTO sys_role_menu (role_id, menu_id) VALUES (2, 2900), (2, 2901), (2, 2902), (2, 2910), (2, 2911), (2, 2912);
+INSERT INTO sys_role_menu (role_id, menu_id) VALUES (2, 2900), (2, 2901), (2, 2902), (2, 2903), (2, 2910), (2, 2911), (2, 2912), (2, 2913);
