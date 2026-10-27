@@ -153,9 +153,10 @@ public class PaymentProofServiceImpl implements PaymentProofService {
             } else {
                 ocrStatus = 2;
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // 捕获Throwable含Error：OCR为辅助功能，任何崩溃都不应阻断凭证提交
             ocrStatus = 2;
-            log.warn("OCR识别异常（不影响提交）: {}", e.getMessage());
+            log.warn("OCR识别异常（不影响提交）: {}", e.toString());
         }
 
         // 9. 金额比对（OCR金额 vs 应付金额）

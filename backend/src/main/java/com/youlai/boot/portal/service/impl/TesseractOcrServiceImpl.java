@@ -39,9 +39,15 @@ public class TesseractOcrServiceImpl implements OcrService {
             if (tessdataPath == null || tessdataPath.isBlank()) {
                 tessdataPath = detectTessdataPath();
             }
+            // 探测不到有效tessdata目录，OCR不可用
+            if (tessdataPath == null) {
+                available = false;
+                log.warn("未找到tessdata目录（服务器可能未安装tesseract-ocr），OCR初筛功能不可用");
+                return;
+            }
             tesseract.setDatapath(tessdataPath);
             tesseract.setLanguage(language);
-            // 支付截图场景：单行文本少，用默认引擎模式即可
+            // 支持截图场景：单行文本少，用默认引擎模式即可
             tesseract.setPageSegMode(6);
             available = true;
             log.info("Tesseract OCR 初始化成功, tessdataPath={}, language={}", tessdataPath, language);
@@ -68,8 +74,10 @@ public class TesseractOcrServiceImpl implements OcrService {
         } catch (TesseractException e) {
             log.error("Tesseract OCR 识别异常, fileName={}: {}", fileName, e.getMessage());
             return null;
-        } catch (Exception e) {
-            log.error("OCR处理异常, fileName={}", fileName, e);
+        } catch (Throwable e) {
+            // 捕获Throwable含Error：tess4j加载语言包失败时会抛java.lang.Error: Invalid memory access，
+            // catch(Exception)捕获不到，会导致整个凭证提交失败
+            log.error("OCR处理异常(含Error), fileName={}: {}", fileName, e.toString());
             return null;
         }
     }
@@ -89,6 +97,7 @@ public class TesseractOcrServiceImpl implements OcrService {
                 return path;
             }
         }
-        return "/usr/share/tesseract-ocr/5/tessdata";
+        // 探测不到返回null，init()将标记OCR不可用，避免doOCR时JNA崩溃
+        return null;
     }
 }
