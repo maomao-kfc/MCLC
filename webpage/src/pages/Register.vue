@@ -15,7 +15,6 @@
         <div class="menu-item" :class="{ active: route.path === '/register/contact' }" @click="goTo('/register/contact')">{{ t('register.steps.contact') }}</div>
         <div class="menu-item" :class="{ active: route.path === '/register/signup' }" @click="goTo('/register/signup')">{{ t('register.steps.signup') }}</div>
         <div class="menu-item" :class="{ active: route.path === '/register/confirm' }" @click="goTo('/register/confirm')">{{ t('register.steps.confirm') }}</div>
-        <div class="menu-item" :class="{ active: route.path === '/register/final' }" @click="goTo('/register/final')">{{ t('register.steps.final') }}</div>
       </div>
     </div>
     <div class="register-content">
@@ -91,8 +90,7 @@ const stepOrder = [
   '/register/consent',
   '/register/contact',
   '/register/signup',
-  '/register/confirm',
-  '/register/final'
+  '/register/confirm'
 ]
 
 const goTo = (path) => {

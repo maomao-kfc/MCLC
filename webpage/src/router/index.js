@@ -117,8 +117,7 @@ const routes = [{
 			{ path: 'signup', component: () => import('@/pages/register/Signup.vue') },
 			{ path: 'skills', component: () => import('@/pages/register/Skills.vue') },
 			{ path: 'expert', component: () => import('@/pages/register/Expert.vue') },
-			{ path: 'confirm', component: () => import('@/pages/register/Confirm.vue') },
-			{ path: 'final', component: () => import('@/pages/register/Final.vue') }
+			{ path: 'confirm', component: () => import('@/pages/register/Confirm.vue') }
 		]
 	},
 	{

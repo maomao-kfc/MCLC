@@ -135,7 +135,7 @@
       <!-- 按钮组 -->
       <div class="btn-group">
         <el-button class="back-btn" @click="handleBack">{{ t('register.back') }}</el-button>
-        <el-button class="confirm-btn" :loading="confirmLoading" @click="handleConfirm">{{ t('register.nextStep') }}</el-button>
+        <el-button class="confirm-btn" :loading="confirmLoading" @click="handleConfirm">{{ t('register.confirmRegistration') }}</el-button>
       </div>
     </div>
   </div>
@@ -218,6 +218,15 @@ const handleProofFileChange = (uploadFile) => {
   }
   proofFile.value = raw
   proofFileList.value = [uploadFile]
+  // 自动填入当前系统时间为支付时间
+  proofPayTime.value = formatNow()
+}
+
+// 格式化当前时间为 YYYY-MM-DD HH:mm:ss
+const formatNow = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 const fetchProofStatus = async () => {
@@ -496,7 +505,9 @@ const handleConfirm = async () => {
     confirmLoading.value = false
   }
 
-  router.push('/register/final')
+  // 注册流程完成：回首页并清空注册数据（原"注册确认"步骤已合并至此）
+  router.push({ path: '/', query: { login: 1 } })
+  registerStore.clearRegisterData()
 }
 </script>
 
