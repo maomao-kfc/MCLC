@@ -124,23 +124,28 @@ public class PaymentProofUtil {
 
     /**
      * 从 OCR 文本中提取金额
-     * <p>匹配模式：¥100.00 / €100.00 / 100.00元 / 金额：100.00 / 100.00</p>
+     * <p>匹配模式：-¥1000.00 / ¥1,000.00 / ¥1000 / -1000 / 100.00元 / 金额：100.00 / Amount: 100.00</p>
+     * <p>支持：负号（微信支出截图）、千分位逗号、整数金额（无小数点）</p>
      */
     public static String extractAmountFromOcrText(String ocrText) {
         if (ocrText == null || ocrText.isBlank()) {
             return null;
         }
-        // 优先匹配带货币符号的金额
+        // 预处理：去掉千分位逗号（1,000.00 → 1000.00），避免逗号被误认为小数点
+        String text = ocrText.replaceAll("(\\d),(\\d{3})", "$1$2");
+        // 优先匹配带货币符号的金额（支持前置负号和小数可选）
         Pattern[] patterns = {
-                Pattern.compile("[¥￥€$]\\s*(\\d+[.,]\\d{1,2})"),
-                Pattern.compile("(\\d+[.,]\\d{1,2})\\s*元"),
-                Pattern.compile("金额[:：\\s]*(\\d+[.,]\\d{1,2})"),
-                Pattern.compile("Amount[:：\\s]*(\\d+[.,]\\d{1,2})")
+                Pattern.compile("[¥￥€$]\\s*-?\\s*(\\d+(?:\\.\\d{1,2})?)"),
+                Pattern.compile("-?\\s*(\\d+(?:\\.\\d{1,2})?)\\s*元"),
+                Pattern.compile("金额[:：\\s]*-?\\s*(\\d+(?:\\.\\d{1,2})?)"),
+                Pattern.compile("Amount[:：\\s]*-?\\s*(\\d+(?:\\.\\d{1,2})?)", Pattern.CASE_INSENSITIVE),
+                // 兜底：负号开头的数字（微信/支付宝支出截图特征：-1000）
+                Pattern.compile("(?<!\\d)-\\s*(\\d+(?:\\.\\d{1,2})?)(?!\\d)")
         };
         for (Pattern p : patterns) {
-            Matcher m = p.matcher(ocrText);
+            Matcher m = p.matcher(text);
             if (m.find()) {
-                return m.group(1).replace(",", ".");
+                return m.group(1);
             }
         }
         return null;

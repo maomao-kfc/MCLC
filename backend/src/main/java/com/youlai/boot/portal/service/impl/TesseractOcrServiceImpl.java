@@ -47,8 +47,9 @@ public class TesseractOcrServiceImpl implements OcrService {
             }
             tesseract.setDatapath(tessdataPath);
             tesseract.setLanguage(language);
-            // 支持截图场景：单行文本少，用默认引擎模式即可
-            tesseract.setPageSegMode(6);
+            // PSM 11(Sparse text)：不假设布局，尽量识别所有文字
+            // 支付截图是多区域布局（大号金额+小号详情），PSM 6(单块文本)会漏掉大号金额
+            tesseract.setPageSegMode(11);
             available = true;
             log.info("Tesseract OCR 初始化成功, tessdataPath={}, language={}", tessdataPath, language);
         } catch (Exception | UnsatisfiedLinkError e) {
