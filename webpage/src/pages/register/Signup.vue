@@ -264,7 +264,7 @@ const handleNext = async () => {
     }
   } catch (e) {
     console.error('注册失败', e)
-    ElMessage.error(e?.response?.data?.msg || t('register.registrationFailed'))
+    ElMessage.error(e?.response?.data?.msg || e?.message || t('register.registrationFailed'))
   } finally {
     loading.value = false
   }

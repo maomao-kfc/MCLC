@@ -58,7 +58,7 @@ export const useUserStore = defineStore('user', () => {
       }
     } catch (error) {
       console.error('Registration request error:', error)
-      ElMessage.error(error?.response?.data?.msg || t('user.networkError'))
+      ElMessage.error(error?.response?.data?.msg || error?.message || t('user.networkError'))
       return { success: false }
     }
   }
@@ -84,7 +84,7 @@ export const useUserStore = defineStore('user', () => {
       }
     } catch (error) {
       console.error('Login request error:', error)
-      ElMessage.error(t('user.networkError'))
+      ElMessage.error(error?.response?.data?.msg || error?.message || t('user.networkError'))
       return false
     }
   }

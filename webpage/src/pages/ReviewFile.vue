@@ -128,7 +128,7 @@ const handleApprove = () => {
       ElMessage.success(t('reviewFile.approveSuccess'))
       reviewedResult.value = 1  // 更新页面状态，防止重复操作
     } catch (err) {
-      ElMessage.error(err?.response?.data?.msg || t('reviewFile.operateFail'))
+      ElMessage.error(err?.response?.data?.msg || err?.message || t('reviewFile.operateFail'))
     }
   }).catch(() => {})
 }
@@ -157,7 +157,7 @@ const handleReject = () => {
       reviewedResult.value = 2  // 更新页面状态
       reviewedRejectReason.value = value
     } catch (err) {
-      ElMessage.error(err?.response?.data?.msg || t('reviewFile.operateFail'))
+      ElMessage.error(err?.response?.data?.msg || err?.message || t('reviewFile.operateFail'))
     }
   }).catch(() => {})
 }

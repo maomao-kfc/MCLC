@@ -458,7 +458,7 @@ const handleConfirm = async () => {
     }
   } catch (e) {
     console.error('更新支付信息失败', e)
-    ElMessage.error(e?.response?.data?.msg || t('register.updateFailed'))
+    ElMessage.error(e?.response?.data?.msg || e?.message || t('register.updateFailed'))
     return
   } finally {
     confirmLoading.value = false
