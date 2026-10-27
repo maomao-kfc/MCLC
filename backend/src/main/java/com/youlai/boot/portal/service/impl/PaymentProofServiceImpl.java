@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -70,14 +71,17 @@ public class PaymentProofServiceImpl implements PaymentProofService {
             throw new RuntimeException("图片大小不能超过10MB");
         }
 
-        // 3. 读取图片
+        // 3. 读取图片（从已读字节数组解码，避免流重复读取问题）
         byte[] imageBytes;
         BufferedImage originalImage;
         try {
             imageBytes = file.getBytes();
-            originalImage = ImageIO.read(file.getInputStream());
+            originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
             if (originalImage == null) {
-                throw new RuntimeException("图片文件损坏或格式不支持");
+                // ImageIO 无法解码（可能为特殊格式/色彩空间，如CMYK JPEG、HEIC改扩展名等）
+                // 记录文件头魔数便于诊断，降级处理：跳过水印和dHash，仍允许提交
+                log.warn("ImageIO无法解码凭证图片，将跳过水印和感知哈希去重。文件名={}, 大小={}B, contentType={}, 魔数={}",
+                        originalFilename, imageBytes.length, file.getContentType(), bytesToHex(imageBytes, 8));
             }
         } catch (Exception e) {
             log.error("读取凭证图片失败", e);
@@ -92,20 +96,23 @@ public class PaymentProofServiceImpl implements PaymentProofService {
             throw new RuntimeException("该支付凭证已被提交，请勿重复上传同一张截图");
         }
 
-        // 5. dHash 感知哈希去重（防裁剪/压缩重复）
-        String dHash = PaymentProofUtil.calculateDHash(originalImage);
-        List<PaymentProof> allProofs = paymentProofMapper.selectList(
-                new LambdaQueryWrapper<PaymentProof>().isNotNull(PaymentProof::getFilePhash));
-        for (PaymentProof existing : allProofs) {
-            int distance = PaymentProofUtil.hammingDistance(dHash, existing.getFilePhash());
-            if (distance < DHASH_DISTANCE_THRESHOLD) {
-                log.warn("感知哈希去重拦截: 新凭证dHash={}, 与凭证id={}的dHash={} 汉明距离={}",
-                        dHash, existing.getId(), existing.getFilePhash(), distance);
-                throw new RuntimeException("该支付凭证与已提交的凭证高度相似，请勿重复使用同一张截图");
+        // 5. dHash 感知哈希去重（防裁剪/压缩重复；图片无法解码时跳过）
+        String dHash = null;
+        if (originalImage != null) {
+            dHash = PaymentProofUtil.calculateDHash(originalImage);
+            List<PaymentProof> allProofs = paymentProofMapper.selectList(
+                    new LambdaQueryWrapper<PaymentProof>().isNotNull(PaymentProof::getFilePhash));
+            for (PaymentProof existing : allProofs) {
+                int distance = PaymentProofUtil.hammingDistance(dHash, existing.getFilePhash());
+                if (distance < DHASH_DISTANCE_THRESHOLD) {
+                    log.warn("感知哈希去重拦截: 新凭证dHash={}, 与凭证id={}的dHash={} 汉明距离={}",
+                            dHash, existing.getId(), existing.getFilePhash(), distance);
+                    throw new RuntimeException("该支付凭证与已提交的凭证高度相似，请勿重复使用同一张截图");
+                }
             }
         }
 
-        // 6. 后端加水印
+        // 6. 后端加水印（图片无法解码时跳过水印，直接上传原图）
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         Long userId = null;
         try {
@@ -114,20 +121,23 @@ public class PaymentProofServiceImpl implements PaymentProofService {
             // 门户用户可能未登录系统，userId 留空
         }
         String watermarkText = StrUtil.format("MCLC-REG{}-u{}-{}", form.getRegistrationId(), userId != null ? userId : "anon", timestamp);
-        BufferedImage watermarkedImage = PaymentProofUtil.addWatermark(originalImage, watermarkText);
-
-        // 7. 上传带水印图片
         String format = originalFilename.toLowerCase().endsWith(".png") ? "png" : "jpg";
-        byte[] watermarkedBytes;
-        try {
-            watermarkedBytes = PaymentProofUtil.imageToBytes(watermarkedImage, format);
-        } catch (Exception e) {
-            log.error("水印图片转换失败", e);
-            throw new RuntimeException("图片处理失败");
-        }
         String watermarkedFilename = "proof_" + form.getRegistrationId() + "_" + timestamp + "." + format;
+        byte[] uploadBytes;
+        if (originalImage != null) {
+            BufferedImage watermarkedImage = PaymentProofUtil.addWatermark(originalImage, watermarkText);
+            try {
+                uploadBytes = PaymentProofUtil.imageToBytes(watermarkedImage, format);
+            } catch (Exception e) {
+                log.error("水印图片转换失败", e);
+                throw new RuntimeException("图片处理失败");
+            }
+        } else {
+            // 无法解码图片，上传原始字节（无水印）
+            uploadBytes = imageBytes;
+        }
         MultipartFile watermarkedFile = new ByteArrayMultipartFile(
-                "file1", watermarkedFilename, file.getContentType(), watermarkedBytes);
+                "file1", watermarkedFilename, file.getContentType(), uploadBytes);
         FileInfo fileInfo = fileService.uploadFile(watermarkedFile);
         String fileUrl = fileInfo.getUrl();
 
@@ -136,7 +146,7 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         String ocrAmount = null;
         int ocrStatus = 0;
         try {
-            ocrText = ocrService.recognizeText(file.getInputStream(), originalFilename);
+            ocrText = ocrService.recognizeText(new ByteArrayInputStream(imageBytes), originalFilename);
             if (ocrText != null && !ocrText.isBlank()) {
                 ocrStatus = 1;
                 ocrAmount = PaymentProofUtil.extractAmountFromOcrText(ocrText);
@@ -373,5 +383,18 @@ public class PaymentProofServiceImpl implements PaymentProofService {
     private boolean isImageFile(String filename) {
         String lower = filename.toLowerCase();
         return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png");
+    }
+
+    /**
+     * 字节数组转十六进制字符串（用于输出文件头魔数诊断图片实际格式）
+     */
+    private static String bytesToHex(byte[] bytes, int limit) {
+        StringBuilder sb = new StringBuilder();
+        int len = Math.min(bytes.length, limit);
+        for (int i = 0; i < len; i++) {
+            sb.append(String.format("%02X", bytes[i]));
+            if (i < len - 1) sb.append(" ");
+        }
+        return sb.toString();
     }
 }
