@@ -131,4 +131,23 @@ public class RegisterUserInformation implements Serializable {
 
     @TableField("reject_reason")
     private String rejectReason;
+
+    /** 凭证状态: null=未提交, proof_submitted=待核验, review_passed=待对账确认, rejected=已驳回, paid=已支付, offline_paid=线下登记 */
+    @TableField("proof_status")
+    private String proofStatus;
+
+    @TableField("proof_submit_time")
+    private java.time.LocalDateTime proofSubmitTime;
+
+    @TableField("proof_review_time")
+    private java.time.LocalDateTime proofReviewTime;
+
+    @TableField("proof_reviewer_id")
+    private Long proofReviewerId;
+
+    @TableField("proof_reject_reason")
+    private String proofRejectReason;
+
+    @TableField("declared_pay_time")
+    private java.time.LocalDateTime declaredPayTime;
 }

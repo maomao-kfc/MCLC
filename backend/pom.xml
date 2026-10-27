@@ -69,6 +69,9 @@
 
         <!-- 二维码生成 -->
         <zxing.version>3.5.3</zxing.version>
+
+        <!-- OCR 文字识别（支付凭证截图初筛） -->
+        <tess4j.version>5.13.0</tess4j.version>
     </properties>
 
     <dependencies>
@@ -364,6 +367,13 @@
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
             <version>2.0.3</version>
+        </dependency>
+
+        <!-- Tess4J：OCR文字识别，用于支付凭证截图初筛（需服务器/Docker安装tesseract-ocr） -->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>${tess4j.version}</version>
         </dependency>
 
     </dependencies>

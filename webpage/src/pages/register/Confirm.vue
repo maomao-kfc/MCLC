@@ -50,6 +50,79 @@
             <a :href="paymentLink" target="_blank" class="payment-link-btn">{{ t('register.clickToPay') }}</a>
           </div>
         </div>
+
+        <!-- 支付凭证上传区 -->
+        <div class="proof-section">
+          <div class="proof-title">{{ t('register.proofUploadTitle') }}</div>
+          <p class="proof-tip">{{ t('register.proofUploadTip') }}</p>
+
+          <!-- 已提交凭证：状态展示 -->
+          <div v-if="proofStatus && proofStatus !== 'rejected'" class="proof-status-card">
+            <el-tag :type="proofStatusTagType" size="large" effect="dark">{{ proofStatusText }}</el-tag>
+            <p v-if="proofSubmitTime" class="proof-submit-time">{{ proofSubmitTime }}</p>
+          </div>
+
+          <!-- 凭证上传表单（未提交 或 已驳回可重传） -->
+          <div v-if="!proofStatus || proofStatus === 'rejected'" class="proof-form">
+            <div v-if="proofStatus === 'rejected'" class="proof-rejected-tip">
+              {{ t('register.proofRejectReason') }}：{{ proofRejectReason || '-' }}，{{ t('register.proofResubmit') }}
+            </div>
+
+            <el-upload
+              class="proof-upload"
+              drag
+              accept=".jpg,.jpeg,.png"
+              :auto-upload="false"
+              :limit="1"
+              :on-change="handleProofFileChange"
+              :on-remove="() => (proofFile = null)"
+              :file-list="proofFileList"
+            >
+              <div class="proof-upload-inner">
+                <span class="proof-upload-icon">📷</span>
+                <span class="proof-upload-text">{{ t('register.proofSelectFile') }}</span>
+                <span class="proof-upload-hint">jpg / png / jpeg，≤10MB</span>
+              </div>
+            </el-upload>
+
+            <div class="proof-field">
+              <label class="proof-label">{{ t('register.proofPayTime') }} *</label>
+              <el-date-picker
+                v-model="proofPayTime"
+                type="datetime"
+                :placeholder="t('register.proofPayTimePlaceholder')"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                class="proof-input"
+              />
+            </div>
+
+            <div class="proof-field">
+              <label class="proof-label">{{ t('register.proofAmount') }} *</label>
+              <el-input v-model="proofAmount" :placeholder="t('register.proofAmountPlaceholder')" class="proof-input" />
+            </div>
+
+            <div class="proof-field">
+              <label class="proof-label">{{ t('register.proofTradeNo') }}</label>
+              <el-input v-model="proofTradeNo" :placeholder="t('register.proofTradeNoPlaceholder')" class="proof-input" />
+            </div>
+
+            <div class="proof-field">
+              <label class="proof-label">{{ t('register.proofRemark') }}</label>
+              <el-input v-model="proofRemark" type="textarea" :rows="2" class="proof-input" />
+            </div>
+
+            <el-button
+              type="primary"
+              class="proof-submit-btn"
+              :loading="proofSubmitting"
+              :disabled="!proofFile || !proofPayTime || !proofAmount"
+              @click="handleSubmitProof"
+            >
+              {{ proofSubmitting ? t('register.proofSubmitting') : t('register.proofSubmitBtn') }}
+            </el-button>
+          </div>
+        </div>
       </div>
 
       <!-- 按钮组 -->
@@ -71,6 +144,7 @@ import { useUserStore } from '@/stores/user'
 import { getDiscountConfigurationList } from '@/api/discountConfiguration'
 import { checkDeductionCode } from '@/api/contribution'
 import { updateRegisterUser } from '@/api/user'
+import { submitPaymentProof, getProofStatus } from '@/api/paymentProof'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -84,6 +158,116 @@ const deductionVerified = ref(registerStore.state.deductionVerified)
 const deductionMsg = ref('')
 
 const confirmLoading = ref(false)
+
+// ========== 支付凭证相关状态 ==========
+const proofStatus = ref(null) // null=未提交 / proof_submitted / review_passed / paid / rejected / offline_paid
+const proofRejectReason = ref('')
+const proofSubmitTime = ref('')
+const proofFile = ref(null)
+const proofFileList = ref([])
+const proofPayTime = ref('')
+const proofAmount = ref('')
+const proofTradeNo = ref('')
+const proofRemark = ref('')
+const proofSubmitting = ref(false)
+
+const proofStatusText = computed(() => {
+  const map = {
+    proof_submitted: t('register.proofStatusPending'),
+    review_passed: t('register.proofStatusReviewPassed'),
+    paid: t('register.proofStatusPaid'),
+    rejected: t('register.proofStatusRejected'),
+    offline_paid: t('register.proofStatusOfflinePaid')
+  }
+  return map[proofStatus.value] || ''
+})
+
+const proofStatusTagType = computed(() => {
+  const map = {
+    proof_submitted: 'warning',
+    review_passed: 'primary',
+    paid: 'success',
+    rejected: 'danger',
+    offline_paid: 'success'
+  }
+  return map[proofStatus.value] || 'info'
+})
+
+const handleProofFileChange = (uploadFile) => {
+  const raw = uploadFile.raw
+  if (!raw) return
+  const okTypes = ['image/jpeg', 'image/jpg', 'image/png']
+  if (!okTypes.includes(raw.type)) {
+    ElMessage.error(t('register.proofFileTypeError'))
+    proofFileList.value = []
+    proofFile.value = null
+    return
+  }
+  if (raw.size > 10 * 1024 * 1024) {
+    ElMessage.error(t('register.proofFileSizeError'))
+    proofFileList.value = []
+    proofFile.value = null
+    return
+  }
+  proofFile.value = raw
+  proofFileList.value = [uploadFile]
+}
+
+const fetchProofStatus = async () => {
+  const id = userStore.registrationId
+  if (!id) return
+  try {
+    const res = await getProofStatus(id)
+    if (res.code === '00000' && res.data) {
+      proofStatus.value = res.data.proofStatus || null
+      proofRejectReason.value = res.data.proofRejectReason || ''
+      proofSubmitTime.value = res.data.proofSubmitTime || ''
+      // 驳回后重传时，预填上次申报的金额
+      if (proofStatus.value === 'rejected' && res.data.lastDeclaredAmount) {
+        proofAmount.value = res.data.lastDeclaredAmount
+      }
+    }
+  } catch (e) {
+    console.error('查询凭证状态失败：', e)
+  }
+}
+
+const handleSubmitProof = async () => {
+  if (!proofFile.value || !proofPayTime.value || !proofAmount.value) return
+  const id = userStore.registrationId
+  if (!id) {
+    ElMessage.error(t('register.registrationFailed'))
+    return
+  }
+  proofSubmitting.value = true
+  try {
+    const res = await submitPaymentProof(proofFile.value, {
+      registrationId: Number(id),
+      declaredPayTime: proofPayTime.value,
+      declaredAmount: proofAmount.value,
+      declaredTradeNo: proofTradeNo.value || undefined,
+      remark: proofRemark.value || undefined
+    })
+    if (res.code === '00000') {
+      ElMessage.success(t('register.proofSubmitSuccess'))
+      proofStatus.value = 'proof_submitted'
+      // 清空表单
+      proofFile.value = null
+      proofFileList.value = []
+      proofPayTime.value = ''
+      proofAmount.value = ''
+      proofTradeNo.value = ''
+      proofRemark.value = ''
+    } else {
+      ElMessage.error(res.msg || t('register.uploadPicBankFail'))
+    }
+  } catch (e) {
+    console.error('提交凭证失败：', e)
+    ElMessage.error(e?.message || e?.response?.data?.msg || t('register.uploadPicBankFail'))
+  } finally {
+    proofSubmitting.value = false
+  }
+}
 
 const totalIsZero = computed(() => {
   const price = calculatedPrice.value.finalPrice
@@ -237,6 +421,7 @@ const verifyDeductionCode = async () => {
 
 onMounted(() => {
   fetchDiscounts()
+  fetchProofStatus()
 })
 
 const handleBack = () => {
@@ -422,6 +607,117 @@ const handleConfirm = async () => {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
+/* ========== 支付凭证上传区 ========== */
+.proof-section {
+  max-width: 480px;
+  margin: 30px auto 0;
+  background: #fafbff;
+  border: 1px solid #e4e7f5;
+  border-radius: 14px;
+  padding: 24px 28px;
+  text-align: left;
+}
+
+.proof-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.proof-tip {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.proof-status-card {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.proof-submit-time {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 10px;
+}
+
+.proof-rejected-tip {
+  background: #fef0f0;
+  color: #f56c6c;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.proof-upload {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.proof-upload :deep(.el-upload-dragger) {
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.proof-upload-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.proof-upload-icon {
+  font-size: 28px;
+}
+
+.proof-upload-text {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.proof-upload-hint {
+  font-size: 12px;
+  color: #bbb;
+}
+
+.proof-field {
+  margin-bottom: 14px;
+}
+
+.proof-label {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.proof-input {
+  width: 100%;
+}
+
+.proof-submit-btn {
+  width: 100%;
+  margin-top: 6px;
+  background-color: #009688;
+  border-color: #009688;
+  font-size: 15px;
+  padding: 12px 0;
+  border-radius: 8px;
+}
+
+.proof-submit-btn:hover {
+  background-color: #00b3a4;
+  border-color: #00b3a4;
+}
+
 .btn-group {
   display: flex;
   justify-content: space-between;
@@ -466,6 +762,10 @@ const handleConfirm = async () => {
   }
   .payment-qr-card {
     max-width: 100%;
+  }
+  .proof-section {
+    max-width: 100%;
+    padding: 16px;
   }
   .btn-group {
     padding: 0;

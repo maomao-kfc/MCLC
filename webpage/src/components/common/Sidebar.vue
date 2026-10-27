@@ -16,7 +16,8 @@
 <!--        <el-image class="register-icon blue" src="/assets/image/common/tuan.png" />-->
 <!--        <p>{{ t('register.team') }}</p>-->
 <!--      </div>-->
-      <div class="register-item" @click="showPaperDialog">
+      <!-- 投稿功能已关闭，重新开启时去掉 disabled class 并恢复 @click="showPaperDialog" -->
+      <div class="register-item disabled">
         <el-image class="register-icon green" src="/assets/image/common/touGao.png" />
         <p>{{ t('register.submit') }}</p>
       </div>

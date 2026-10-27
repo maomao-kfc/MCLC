@@ -6,7 +6,46 @@
 
 ---
 
-## 2026-10-13
+## 2026-10-27
+
+### [Feature] 支付凭证上传 + 人工对账功能（方案B）
+
+- **目的：**
+  - 协会要求支付只能在其外部网站（cahpepx.kechuangfu.com）进行，MCLC系统无法自动追踪支付状态
+  - 实现"用户上传凭证截图 → 后端三层防伪 → 人工审核 → 协会对账Excel批量匹配"完整链路
+  - 不依赖协会任何系统改造，所有校验在我方系统内完成，操作全留痕可审计
+
+- **核心能力：**
+  - 三层防伪：后端Graphics2D平铺水印（含注册ID+时间戳）→ MD5精确去重 + dHash感知哈希去重（汉明距离<5防裁剪/压缩）→ Tesseract OCR金额初筛
+  - 四级审核：用户提交(proof_submitted) → 系统初检(OCR金额比对) → 人工复核(review_passed/rejected) → 对账确认(paid)
+  - 多维度匹配引擎：姓名30分 + 手机25分 + 金额25分 + 时间20分，总分≥60自动匹配标记已支付
+  - 兜底机制：线下支付登记(offline_paid)、驳回可重传、未匹配对账记录人工确认
+
+- **涉及文件：**
+  - 数据库：`backend/sql/mysql/V20261027_01__payment_proof_reconciliation.sql` — 新建（register_user_information加6列 + payment_proof/reconciliation_batch/reconciliation_record三表 + sys_menu 2900-2912 + ADMIN授权）
+  - 后端依赖：`backend/pom.xml`（加tess4j 5.13.0）、`backend/Dockerfile`（加tesseract-ocr/chi-sim/eng）
+  - 后端实体/Mapper：PaymentProof/ReconciliationBatch/ReconciliationRecord + 对应Mapper（6个新文件）
+  - 后端工具：`PaymentProofUtil.java`（水印/dHash/汉明距离/金额提取）、`ByteArrayMultipartFile.java`、`TesseractOcrServiceImpl.java`（可插拔，不可用时优雅降级）
+  - 后端Service：`PaymentProofServiceImpl.java`（11步提交流程+审核+线下登记）、`PaymentReconciliationServiceImpl.java`（Excel导入+四维匹配+人工确认）
+  - 后端Controller：`PaymentProofController.java`、`PaymentReconciliationController.java`
+  - 后端配置：`application-dev.yml`/`application-prod.yml`（ignore-urls加submit/status + ocr配置项）
+  - 前端webpage：`api/paymentProof.js`（新建）、`Confirm.vue`（凭证上传区+状态展示）、`locales/zh.js`/`en.js`（26个新key）
+  - 前端frontend：`api/portal/paymentProof.ts`、`api/portal/reconciliation.ts`、`views/portal/paymentProof/index.vue`（审核页）、`views/portal/reconciliation/index.vue`（对账页）
+
+- **影响范围：**
+  - 后端：新增6个API端点（用户端2个公开 + 管理端7个JWT保护），register_user_information表结构变更
+  - 前端webpage：注册确认页新增凭证上传区域，不影响原有二维码支付展示
+  - 前端frontend：会务门户管理下新增"支付凭证审核"和"对账管理"两个菜单页面
+  - 部署：Docker镜像需重新构建（含tesseract-ocr安装），需执行数据库Migration
+
+- **验证方式：**
+  - 后端：mvn compile编译通过
+  - 前端：vue-tsc类型检查新文件0错误
+  - 数据库：Migration脚本sys_menu列名/类型已对照线上表结构修正（parent_id=2807, type=C/M/B, perm列名）
+
+- **验证结果：** 代码实现完成，端到端流程待部署后验证
+
+---
 
 ### [Enhancement] 日程板块标题行主持人位置与讲者表头列对齐
 

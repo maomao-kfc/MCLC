@@ -7,7 +7,7 @@ LABEL maintainer="youlai <youlaitech@163.com>"
 # 设置时区
 ENV TZ=Asia/Shanghai
 
-# 安装 LibreOffice（DOCX转PDF）和中文字体（PDF中文渲染）
+# 安装 LibreOffice（DOCX转PDF）、中文字体（PDF中文渲染）、Tesseract OCR（支付凭证截图识别）
 # 注意：libreoffice-writer 不使用 --no-install-recommends，因为它依赖推荐包才能正常运行
 RUN apt-get update && \
     apt-get install -y \
@@ -15,7 +15,10 @@ RUN apt-get update && \
         fonts-wqy-zenhei \
         fonts-noto-cjk \
         fontconfig \
-        ca-certificates && \
+        ca-certificates \
+        tesseract-ocr \
+        tesseract-ocr-chi-sim \
+        tesseract-ocr-eng && \
     # 刷新字体缓存，确保 OpenPDF 能通过 fontconfig 找到中文字体
     fc-cache -f && \
     # 验证 LibreOffice 和字体安装成功
