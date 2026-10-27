@@ -1,5 +1,6 @@
 package com.youlai.boot.portal.model.form;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -17,6 +18,7 @@ public class PaymentProofSubmitForm {
 
     /** 用户声明的支付时间 */
     @NotNull(message = "支付时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime declaredPayTime;
 
     /** 用户声明的支付金额 */
