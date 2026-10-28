@@ -43,6 +43,13 @@ public class RegisterUserController {
         return Result.success(result);
     }
 
+    @Operation(summary = "根据邮箱查询注册状态（公开接口）")
+    @GetMapping("/status")
+    public Result<Map<String, Object>> getRegistrationStatus(@RequestParam String email) {
+        Map<String, Object> result = registerUserService.getRegistrationStatusByEmail(email);
+        return Result.success(result);
+    }
+
     @Operation(summary = "修改注册用户")
     @PutMapping(value = "/{id}")
     public Result<Map<String, Object>> updateRegisterUser(@RequestBody RegisterUserForm form) {

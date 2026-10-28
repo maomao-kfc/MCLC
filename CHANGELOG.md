@@ -8,6 +8,46 @@
 
 ## 2026-10-28
 
+### [Feature] 注册成功判定与用户回访机制（我的注册页面+邮件中心通知）
+
+- **目的：**
+  - 大会注册必须对账确认（paid/offline_paid）才算成功，原逻辑凭证提交即发"注册成功"邮件，误导用户
+  - 注册成功邮件绕过邮件中心（sendHtmlMail直发），邮件中心无法追踪
+  - 用户注册后无法回访查看注册状态，也不知道成功后如何报名其他小会
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/portal/service/RegisterUserService.java` — 新增getRegistrationStatusByEmail接口声明
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/RegisterUserServiceImpl.java` — 新增邮箱查询实现；删除isNew分支过早发邮件代码
+  - `backend/src/main/java/com/youlai/boot/portal/controller/RegisterUserController.java` — 新增GET /status?email=公开端点
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaymentReconciliationServiceImpl.java` — confirmMatch对账确认后走邮件中心发注册成功邮件
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaymentProofServiceImpl.java` — offlineRegister线下登记后走邮件中心发注册成功邮件
+  - `webpage/src/api/user.js` — 新增getRegistrationStatus API
+  - `webpage/src/pages/MyRegistration.vue` — 新建"我的注册"页面（邮箱查询+4种状态卡片+小会入口）
+  - `webpage/src/router/index.js` — 新增/my-registration路由
+  - `webpage/src/components/common/HeaderLang.vue` — 导航栏新增"我的注册"入口
+  - `webpage/src/pages/register/Confirm.vue` — isRegistrationDone收紧为paid/offline_paid；新增审核中状态卡片
+  - `webpage/src/locales/zh.js` / `webpage/src/locales/en.js` — 新增proofUnderReview等3个register key + myRegistration命名空间27个key
+
+- **修改逻辑：**
+  - 邮件发送时机：从saveRegisterUser（首次提交注册数据时）移至confirmMatch（对账确认）和offlineRegister（线下登记），确保费用确认后才通知
+  - 邮件通道：从mailService.sendHtmlMail()改为mailSendRecordService.createAndSend(MailBusinessType.USER_REGISTER,...)，走邮件中心9态状态机可追踪
+  - 邮箱查询：LambdaQueryWrapper查email+team_id IS NULL+取最新一条，返回12字段注册状态信息
+  - Confirm.vue状态三态：未提交凭证（显示支付区）→审核中proof_submitted/review_passed（橙色卡片）→注册成功paid/offline_paid（绿色完成卡片+小会入口）
+  - MyRegistration页面4种状态卡片：success(绿)/reviewing(橙)/rejected(红+驳回原因)/pending(灰)
+
+- **影响范围：**
+  - 后端：对账确认和线下登记时自动发注册成功邮件（走邮件中心可追踪）；新增公开邮箱查询接口
+  - 前端：注册确认页区分审核中/已完成状态；新增"我的注册"页面供用户回访查询
+  - 数据库：sys_email_template"注册通过模板"内容已更新（引导用户到"我的注册"页面）
+
+- **验证方式：**
+  - mvn compile编译通过
+  - npm run build编译通过（MyRegistration页面正常打包）
+
+- **验证结果：** 成功
+
+---
+
 ### [Fix] 论文审批误拦截BUG修复（拦截条件+重发清理逻辑）
 
 - **目的：**

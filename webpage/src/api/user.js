@@ -28,3 +28,12 @@ export const updateRegisterUser = (id, data) => {
     data
   })
 }
+
+// 根据邮箱查询注册状态（公开接口，"我的注册"页面用）
+export const getRegistrationStatus = (email) => {
+  return request({
+    url: '/api/v1/registerUser/status',
+    method: 'GET',
+    params: { email }
+  })
+}

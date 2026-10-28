@@ -17,8 +17,12 @@ import com.youlai.boot.portal.service.PaymentProofService;
 import com.youlai.boot.portal.util.ByteArrayMultipartFile;
 import com.youlai.boot.portal.util.PaymentProofUtil;
 import com.youlai.boot.security.util.SecurityUtils;
+import com.youlai.boot.support.mail.enums.MailBusinessType;
+import com.youlai.boot.support.mail.service.MailSendRecordService;
 import com.youlai.boot.system.mapper.RegistrationTypeMapper;
 import com.youlai.boot.system.model.entity.RegistrationType;
+import com.youlai.boot.system.model.form.EmailTemplateForm;
+import com.youlai.boot.system.service.EmailTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +51,8 @@ public class PaymentProofServiceImpl implements PaymentProofService {
     private final RegistrationTypeMapper registrationTypeMapper;
     private final FileService fileService;
     private final OcrService ocrService;
+    private final MailSendRecordService mailSendRecordService;
+    private final EmailTemplateService emailTemplateService;
 
     /** dHash 汉明距离阈值，小于此值视为同一张图 */
     private static final int DHASH_DISTANCE_THRESHOLD = 5;
@@ -378,7 +384,33 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         }
         registerUserInformationMapper.updateById(registerUser);
 
+        // 线下登记确认 → 通过邮件中心发送"大会注册成功"通知邮件
+        sendRegistrationSuccessEmail(registerUser);
+
         log.info("线下支付登记: registrationId={}, operator={}, remark={}", registrationId, operatorName, remark);
+    }
+
+    /**
+     * 发送"大会注册成功"通知邮件（走邮件中心，可追踪发送状态）
+     */
+    private void sendRegistrationSuccessEmail(RegisterUserInformation registerUser) {
+        if (StrUtil.isBlank(registerUser.getEmail())) return;
+        try {
+            EmailTemplateForm templateForm = emailTemplateService.getEmailTemplateForm("注册通过模板");
+            String content = templateForm.getEmailContent()
+                    .replace("{{name1}}", registerUser.getName() + " " + registerUser.getSurname());
+            mailSendRecordService.createAndSend(
+                    MailBusinessType.USER_REGISTER,
+                    registerUser.getId(),
+                    registerUser.getEmail(),
+                    registerUser.getName() + " " + registerUser.getSurname(),
+                    "MCLC大会注册成功",
+                    content
+            );
+            log.info("注册成功通知邮件已发送：registrationId={}, email={}", registerUser.getId(), registerUser.getEmail());
+        } catch (Exception e) {
+            log.error("发送注册成功邮件失败：registrationId={}, error={}", registerUser.getId(), e.getMessage());
+        }
     }
 
     private PaymentProofPageVO toPageVO(PaymentProof proof, RegisterUserInformation ru) {

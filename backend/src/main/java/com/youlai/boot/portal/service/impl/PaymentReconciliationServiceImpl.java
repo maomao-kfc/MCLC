@@ -13,6 +13,10 @@ import com.youlai.boot.portal.model.entity.ReconciliationRecord;
 import com.youlai.boot.portal.model.entity.RegisterUserInformation;
 import com.youlai.boot.portal.service.PaymentReconciliationService;
 import com.youlai.boot.security.util.SecurityUtils;
+import com.youlai.boot.support.mail.enums.MailBusinessType;
+import com.youlai.boot.support.mail.service.MailSendRecordService;
+import com.youlai.boot.system.model.form.EmailTemplateForm;
+import com.youlai.boot.system.service.EmailTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +43,8 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
     private final ReconciliationBatchMapper batchMapper;
     private final ReconciliationRecordMapper recordMapper;
     private final RegisterUserInformationMapper registerUserInformationMapper;
+    private final MailSendRecordService mailSendRecordService;
+    private final EmailTemplateService emailTemplateService;
 
     /** 自动匹配分数阈值（满分100，≥60自动匹配） */
     private static final int AUTO_MATCH_THRESHOLD = 60;
@@ -194,9 +200,35 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
             ru.setProofReviewTime(LocalDateTime.now());
             ru.setProofReviewerId(operatorId);
             registerUserInformationMapper.updateById(ru);
+
+            // 对账确认成功 → 通过邮件中心发送"大会注册成功"通知邮件
+            sendRegistrationSuccessEmail(ru);
         }
 
         log.info("人工确认对账匹配: recordId={}, → registrationId={}, operator={}", recordId, registrationId, operatorId);
+    }
+
+    /**
+     * 发送"大会注册成功"通知邮件（走邮件中心，可追踪发送状态）
+     */
+    private void sendRegistrationSuccessEmail(RegisterUserInformation registerUser) {
+        if (StrUtil.isBlank(registerUser.getEmail())) return;
+        try {
+            EmailTemplateForm templateForm = emailTemplateService.getEmailTemplateForm("注册通过模板");
+            String content = templateForm.getEmailContent()
+                    .replace("{{name1}}", registerUser.getName() + " " + registerUser.getSurname());
+            mailSendRecordService.createAndSend(
+                    MailBusinessType.USER_REGISTER,
+                    registerUser.getId(),
+                    registerUser.getEmail(),
+                    registerUser.getName() + " " + registerUser.getSurname(),
+                    "MCLC大会注册成功",
+                    content
+            );
+            log.info("注册成功通知邮件已发送：registrationId={}, email={}", registerUser.getId(), registerUser.getEmail());
+        } catch (Exception e) {
+            log.error("发送注册成功邮件失败：registrationId={}, error={}", registerUser.getId(), e.getMessage());
+        }
     }
 
     @Override

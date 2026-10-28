@@ -91,6 +91,41 @@ public class RegisterUserServiceImpl extends ServiceImpl<RegisterUserInformation
         return registerUserInformationMapper.selectRegisterUserPage(page, queryParams);
     }
 
+    /**
+     * 根据邮箱查询注册状态（公开接口，供"我的注册"页面使用）
+     * 取team_id为null的主记录（排除团队成员），多条时取最新一条
+     */
+    @Override
+    public Map<String, Object> getRegistrationStatusByEmail(String email) {
+        if (StrUtil.isBlank(email)) {
+            throw new BusinessException("邮箱不能为空");
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+        LambdaQueryWrapper<RegisterUserInformation> wrapper = new LambdaQueryWrapper<RegisterUserInformation>()
+                .eq(RegisterUserInformation::getEmail, normalizedEmail)
+                .isNull(RegisterUserInformation::getTeamId)
+                .orderByDesc(RegisterUserInformation::getId)
+                .last("LIMIT 1");
+        RegisterUserInformation registerUser = this.getOne(wrapper);
+        if (registerUser == null) {
+            return null;
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("name", registerUser.getName());
+        result.put("surname", registerUser.getSurname());
+        result.put("registerLabel", registerUser.getRegisterLabel());
+        result.put("registrationFee", registerUser.getRegistrationFee());
+        result.put("paymentAmount", registerUser.getPaymentAmount());
+        result.put("actualPayment", registerUser.getActualPayment());
+        result.put("paymentMethod", registerUser.getPaymentMethod());
+        result.put("proofStatus", registerUser.getProofStatus());
+        result.put("proofSubmitTime", registerUser.getProofSubmitTime());
+        result.put("proofReviewTime", registerUser.getProofReviewTime());
+        result.put("proofRejectReason", registerUser.getProofRejectReason());
+        result.put("registrationDate", registerUser.getRegistrationDate());
+        return result;
+    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> saveRegisterUser(RegisterUserForm form) {
@@ -177,12 +212,9 @@ public class RegisterUserServiceImpl extends ServiceImpl<RegisterUserInformation
             // registerUser.setConnectId(questionnaire.getId());
             this.save(registerUser);
 
-            if (StrUtil.isNotBlank(registerUser.getEmail())) {
-                EmailTemplateForm templateForm = emailTemplateService.getEmailTemplateForm("注册通过模板");
-                String content = templateForm.getEmailContent()
-                        .replace("{{name1}}", registerUser.getName() + " " + registerUser.getSurname());
-                mailService.sendHtmlMail(registerUser.getEmail(), "注册成功", content);
-            }
+            // 注意：此处不再发送"注册成功"邮件
+            // 注册数据首次提交时支付流程尚未完成（未支付/未传凭证），不应通知"注册成功"
+            // 注册成功邮件已移至对账确认(confirmMatch)和线下登记(offlineRegister)时通过邮件中心发送
 
             List<RegisterUserForm.TeamMemberForm> teamMembers = form.getTeamMembers();
             if (teamMembers != null && !teamMembers.isEmpty()) {

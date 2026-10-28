@@ -90,6 +90,14 @@ const routes = [{
 		}
 	},
 	{
+		path: '/my-registration',
+		name: 'MyRegistration',
+		component: () => import('@/pages/MyRegistration.vue'),
+		meta: {
+			title: '我的注册 - 学术会议官网'
+		}
+	},
+	{
 		path: '/review-file',
 		name: 'ReviewFile',
 		component: () => import('@/pages/ReviewFile.vue'),

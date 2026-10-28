@@ -38,8 +38,8 @@
         </div>
       </div>
 
-      <!-- 付款方式：二维码+链接（注册未完成时显示；已提交凭证或免费场景隐藏） -->
-      <div v-if="!totalIsZero && !isRegistrationDone" class="payment-section">
+      <!-- 付款方式：二维码+链接（注册未完成且非审核中时显示） -->
+      <div v-if="!totalIsZero && !isRegistrationDone && !isProofUnderReview" class="payment-section">
         <p class="payment-tip">{{ t('register.selectPaymentMethod') }}</p>
 
         <div class="payment-qr-card">
@@ -94,14 +94,16 @@
 
             <div class="proof-field">
               <label class="proof-label">{{ t('register.proofPayTime') }} *</label>
-              <el-date-picker
-                v-model="proofPayTime"
-                type="datetime"
-                :placeholder="t('register.proofPayTimePlaceholder')"
-                format="YYYY-MM-DD HH:mm"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                class="proof-input"
-              />
+              <el-config-provider :locale="elementLocale">
+                <el-date-picker
+                  v-model="proofPayTime"
+                  type="datetime"
+                  :placeholder="t('register.proofPayTimePlaceholder')"
+                  format="YYYY-MM-DD HH:mm"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+                  class="proof-input"
+                />
+              </el-config-provider>
             </div>
 
             <div class="proof-field">
@@ -132,12 +134,23 @@
         </div>
       </div>
 
-      <!-- 大会注册完成状态卡片（已提交凭证 或 免费场景） -->
+      <!-- 凭证审核中卡片（已提交凭证待核验/初审通过待对账） -->
+      <div v-if="isProofUnderReview" class="reviewing-card">
+        <div class="reviewing-icon">⏳</div>
+        <div class="reviewing-title">{{ t('register.proofUnderReview') }}</div>
+        <p class="reviewing-desc">{{ t('register.proofUnderReviewDesc') }}</p>
+        <div class="reviewing-proof-status">
+          <el-tag :type="proofStatusTagType" size="large" effect="dark">{{ proofStatusText }}</el-tag>
+          <p v-if="proofSubmitTime" class="proof-submit-time">{{ proofSubmitTime }}</p>
+        </div>
+      </div>
+
+      <!-- 大会注册完成状态卡片（对账确认通过 或 免费场景） -->
       <div v-if="isRegistrationDone" class="conf-done-card">
         <div class="conf-done-icon">✅</div>
         <div class="conf-done-title">{{ t('register.mainConfDone') }}</div>
         <p class="conf-done-desc">
-          {{ totalIsZero ? t('register.mainConfDoneFree') : t('register.mainConfDoneProofPending') }}
+          {{ totalIsZero ? t('register.mainConfDoneFree') : t('register.mainConfDonePaid') }}
         </p>
         <!-- 凭证审核状态（付费场景） -->
         <div v-if="!totalIsZero && proofStatus" class="conf-done-proof-status">
@@ -164,7 +177,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElButton, ElInput, ElMessage } from 'element-plus'
+import { ElButton, ElConfigProvider, ElDatePicker, ElInput, ElMessage } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
 import { useRegisterStore } from '@/stores/register'
 import { useUserStore } from '@/stores/user'
 import { getDiscountConfigurationList } from '@/api/discountConfiguration'
@@ -172,7 +187,9 @@ import { checkDeductionCode } from '@/api/contribution'
 import { updateRegisterUser } from '@/api/user'
 import { submitPaymentProof, getProofStatus } from '@/api/paymentProof'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+// Element Plus组件语言（日期选择器等），跟随当前i18n语言
+const elementLocale = computed(() => (locale.value === 'en' ? en : zhCn))
 const registerStore = useRegisterStore()
 const userStore = useUserStore()
 const discountList = ref([])
@@ -245,15 +262,6 @@ const handleProofFileChange = (uploadFile) => {
   }
   proofFile.value = raw
   proofFileList.value = [uploadFile]
-  // 自动填入当前系统时间为支付时间
-  proofPayTime.value = formatNow()
-}
-
-// 格式化当前时间为 YYYY-MM-DD HH:mm:ss
-const formatNow = () => {
-  const d = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 const fetchProofStatus = async () => {
@@ -319,9 +327,14 @@ const totalIsZero = computed(() => {
   return price <= 0
 })
 
-// 大会注册是否完成：免费场景 或 凭证已提交（非驳回）
+// 大会注册是否完成：免费场景 或 凭证对账确认通过（paid/offline_paid）
 const isRegistrationDone = computed(() => {
-  return totalIsZero.value || (!!proofStatus.value && proofStatus.value !== 'rejected')
+  return totalIsZero.value || proofStatus.value === 'paid' || proofStatus.value === 'offline_paid'
+})
+
+// 凭证审核中：已提交待核验 或 初审通过待对账确认
+const isProofUnderReview = computed(() => {
+  return proofStatus.value === 'proof_submitted' || proofStatus.value === 'review_passed'
 })
 
 // 根据注册类别决定支付二维码和链接
@@ -810,6 +823,42 @@ const savePaymentInfo = async () => {
 .proof-submit-btn:hover {
   background-color: #00b3a4;
   border-color: #00b3a4;
+}
+
+/* ========== 凭证审核中卡片 ========== */
+.reviewing-card {
+  max-width: 480px;
+  margin: 30px auto;
+  background: #fdf6ec;
+  border: 1px solid #faecd8;
+  border-radius: 14px;
+  padding: 32px 28px;
+  text-align: center;
+}
+
+.reviewing-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.reviewing-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e6a23c;
+  margin-bottom: 10px;
+}
+
+.reviewing-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.reviewing-proof-status {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #faecd8;
 }
 
 /* ========== 大会注册完成卡片 ========== */

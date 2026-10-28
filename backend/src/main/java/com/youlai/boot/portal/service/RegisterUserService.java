@@ -17,6 +17,14 @@ public interface RegisterUserService extends IService<RegisterUserInformation> {
 
     Map<String, Object> saveRegisterUser(RegisterUserForm form);
 
+    /**
+     * 根据邮箱查询注册状态（公开接口，供"我的注册"页面使用）
+     *
+     * @param email 注册邮箱
+     * @return 注册状态信息，未找到返回null
+     */
+    Map<String, Object> getRegistrationStatusByEmail(String email);
+
     void deleteRegisterUsers(String ids);
 
     RegisterUserPageVO getRegisterUserDetail(Long id);
