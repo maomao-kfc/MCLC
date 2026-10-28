@@ -32,7 +32,7 @@
           <el-input v-model="contactForm.email" :placeholder="t('register.emailPlaceholder')" />
 
         </el-form-item>
-        <el-form-item :label="t('register.organization')" prop="organization" required>
+        <el-form-item :label="t('register.organization')" prop="organization">
 
           <el-input v-model="contactForm.organization" />
         </el-form-item>
@@ -321,7 +321,6 @@ const contactRules = computed(() => ({
     { required: true, message: t('register.validation.enterEmail'), trigger: 'blur' },
     { pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, message: t('register.validation.enterValidEmail'), trigger: 'blur' }
   ],
-  organization: [{ required: true, message: t('register.validation.enterOrganization'), trigger: 'blur' }],
   phone: [
     { required: true, message: t('register.validation.enterPhone'), trigger: 'blur' },
     { pattern: /^[\d\s\-+()]{6,20}$/, message: t('register.phoneInvalid'), trigger: 'blur' }

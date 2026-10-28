@@ -32,7 +32,14 @@ request.interceptors.response.use(
     }
     return res
   },
-  error => Promise.reject(error)
+  error => {
+    // HTTP状态码非2xx（如后端业务异常返回400）：提取后端返回的具体错误消息
+    const msg = error?.response?.data?.msg
+    if (msg) {
+      return Promise.reject(new Error(msg))
+    }
+    return Promise.reject(error)
+  }
 )
 
 export default request

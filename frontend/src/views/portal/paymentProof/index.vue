@@ -137,7 +137,9 @@
             <span v-else>-</span>
           </el-descriptions-item>
           <el-descriptions-item label="支付时间">{{ detailDialog.row.declaredPayTime }}</el-descriptions-item>
-          <el-descriptions-item label="交易号">{{ detailDialog.row.declaredTradeNo || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="申报交易号">{{ detailDialog.row.declaredTradeNo || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="OCR交易单号">{{ detailDialog.row.ocrTradeNo || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="OCR商户单号">{{ detailDialog.row.ocrMerchantNo || '-' }}</el-descriptions-item>
           <el-descriptions-item label="用户备注" :span="2">{{ detailDialog.row.remark || '-' }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="statusTagType(detailDialog.row.status)" size="small">{{ statusText(detailDialog.row.status) }}</el-tag>

@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS payment_proof (
     ocr_payee VARCHAR(128) DEFAULT NULL COMMENT 'OCR识别-收款方名称',
     ocr_pay_time VARCHAR(64) DEFAULT NULL COMMENT 'OCR识别-支付时间',
     ocr_trade_no VARCHAR(128) DEFAULT NULL COMMENT 'OCR识别-交易号',
+    ocr_merchant_no VARCHAR(128) DEFAULT NULL COMMENT 'OCR识别-商户单号',
     ocr_raw_text TEXT COMMENT 'OCR识别原始文本',
     ocr_status TINYINT DEFAULT 0 COMMENT 'OCR状态: 0=未识别, 1=已识别, 2=识别失败',
     amount_match TINYINT DEFAULT NULL COMMENT '金额比对结果: 0=不一致, 1=一致, NULL=未比对',

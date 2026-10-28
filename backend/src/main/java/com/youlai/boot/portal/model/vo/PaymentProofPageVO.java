@@ -57,6 +57,12 @@ public class PaymentProofPageVO {
     /** OCR识别收款方 */
     private String ocrPayee;
 
+    /** OCR识别交易单号 */
+    private String ocrTradeNo;
+
+    /** OCR识别商户单号 */
+    private String ocrMerchantNo;
+
     /** 金额比对结果: 0=不一致, 1=一致, null=未比对 */
     private Integer amountMatch;
 

@@ -17,6 +17,8 @@ import com.youlai.boot.portal.service.PaymentProofService;
 import com.youlai.boot.portal.util.ByteArrayMultipartFile;
 import com.youlai.boot.portal.util.PaymentProofUtil;
 import com.youlai.boot.security.util.SecurityUtils;
+import com.youlai.boot.system.mapper.RegistrationTypeMapper;
+import com.youlai.boot.system.model.entity.RegistrationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,7 @@ public class PaymentProofServiceImpl implements PaymentProofService {
 
     private final PaymentProofMapper paymentProofMapper;
     private final RegisterUserInformationMapper registerUserInformationMapper;
+    private final RegistrationTypeMapper registrationTypeMapper;
     private final FileService fileService;
     private final OcrService ocrService;
 
@@ -59,6 +62,20 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         // 已支付/已线下登记的不允许重复提交
         if ("paid".equals(registerUser.getProofStatus()) || "offline_paid".equals(registerUser.getProofStatus())) {
             throw new RuntimeException("该报名已确认支付，无需重复提交凭证");
+        }
+
+        // 1.1 补算应付金额（存量数据 payment_amount 为空时，根据注册类型和当前日期从 registration_type 计算）
+        if (registerUser.getPaymentAmount() == null || registerUser.getPaymentAmount().isBlank()) {
+            String calculatedAmount = calculatePaymentAmount(registerUser);
+            if (calculatedAmount != null) {
+                registerUser.setPaymentAmount(calculatedAmount);
+                registerUserInformationMapper.updateById(registerUser);
+                log.info("补算应付金额: registrationId={}, registrationFee={}, paymentAmount={}",
+                        form.getRegistrationId(), registerUser.getRegistrationFee(), calculatedAmount);
+            } else {
+                log.warn("无法补算应付金额: registrationId={}, registrationFee={}",
+                        form.getRegistrationId(), registerUser.getRegistrationFee());
+            }
         }
 
         // 2. 校验文件格式
@@ -88,26 +105,30 @@ public class PaymentProofServiceImpl implements PaymentProofService {
             throw new RuntimeException("读取图片失败: " + e.getMessage());
         }
 
-        // 4. MD5 精确去重
+        // 4. MD5 精确去重（排除已驳回的凭证：被驳回后允许重新提交）
         String md5 = PaymentProofUtil.calculateMd5(imageBytes);
         Long md5DuplicateCount = paymentProofMapper.selectCount(
-                new LambdaQueryWrapper<PaymentProof>().eq(PaymentProof::getFileMd5, md5));
+                new LambdaQueryWrapper<PaymentProof>()
+                        .eq(PaymentProof::getFileMd5, md5)
+                        .ne(PaymentProof::getStatus, "rejected"));
         if (md5DuplicateCount > 0) {
-            throw new RuntimeException("该支付凭证已被提交，请勿重复上传同一张截图");
+            throw new RuntimeException("该截图已被上传过了，请勿重复使用同一张截图");
         }
 
-        // 5. dHash 感知哈希去重（防裁剪/压缩重复；图片无法解码时跳过）
+        // 5. dHash 感知哈希去重（防裁剪/压缩重复；图片无法解码时跳过；排除已驳回的凭证）
         String dHash = null;
         if (originalImage != null) {
             dHash = PaymentProofUtil.calculateDHash(originalImage);
             List<PaymentProof> allProofs = paymentProofMapper.selectList(
-                    new LambdaQueryWrapper<PaymentProof>().isNotNull(PaymentProof::getFilePhash));
+                    new LambdaQueryWrapper<PaymentProof>()
+                            .isNotNull(PaymentProof::getFilePhash)
+                            .ne(PaymentProof::getStatus, "rejected"));
             for (PaymentProof existing : allProofs) {
                 int distance = PaymentProofUtil.hammingDistance(dHash, existing.getFilePhash());
                 if (distance < DHASH_DISTANCE_THRESHOLD) {
                     log.warn("感知哈希去重拦截: 新凭证dHash={}, 与凭证id={}的dHash={} 汉明距离={}",
                             dHash, existing.getId(), existing.getFilePhash(), distance);
-                    throw new RuntimeException("该支付凭证与已提交的凭证高度相似，请勿重复使用同一张截图");
+                    throw new RuntimeException("该截图与已上传的凭证高度相似，请勿重复使用同一张截图");
                 }
             }
         }
@@ -144,12 +165,16 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         // 8. OCR 识别
         String ocrText = null;
         String ocrAmount = null;
+        String ocrTradeNo = null;
+        String ocrMerchantNo = null;
         int ocrStatus = 0;
         try {
             ocrText = ocrService.recognizeText(new ByteArrayInputStream(imageBytes), originalFilename);
             if (ocrText != null && !ocrText.isBlank()) {
                 ocrStatus = 1;
                 ocrAmount = PaymentProofUtil.extractAmountFromOcrText(ocrText);
+                ocrTradeNo = PaymentProofUtil.extractTradeNoFromOcrText(ocrText);
+                ocrMerchantNo = PaymentProofUtil.extractMerchantNoFromOcrText(ocrText);
             } else {
                 ocrStatus = 2;
             }
@@ -177,6 +202,8 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         proof.setDeclaredTradeNo(form.getDeclaredTradeNo());
         proof.setRemark(form.getRemark());
         proof.setOcrAmount(ocrAmount);
+        proof.setOcrTradeNo(ocrTradeNo);
+        proof.setOcrMerchantNo(ocrMerchantNo);
         proof.setOcrRawText(ocrText);
         proof.setOcrStatus(ocrStatus);
         proof.setAmountMatch(amountMatch);
@@ -372,6 +399,8 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         vo.setRemark(proof.getRemark());
         vo.setOcrAmount(proof.getOcrAmount());
         vo.setOcrPayee(proof.getOcrPayee());
+        vo.setOcrTradeNo(proof.getOcrTradeNo());
+        vo.setOcrMerchantNo(proof.getOcrMerchantNo());
         vo.setAmountMatch(proof.getAmountMatch());
         vo.setStatus(proof.getStatus());
         vo.setReviewerName(proof.getReviewerName());
@@ -379,6 +408,44 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         vo.setCreateTime(proof.getCreateTime());
         vo.setReviewTime(proof.getReviewTime());
         return vo;
+    }
+
+    /**
+     * 根据注册类型计算应付金额
+     * <p>register_user_information.registration_fee 存的是 registration_type 表的主键ID；
+     * 按当前日期与常规有效期比较：未过期取 normal_amount，超过常规有效期取 deadline_amount</p>
+     *
+     * @param registerUser 注册用户
+     * @return 应付金额（已去千分位逗号，如"1000"），无法计算返回null
+     */
+    private String calculatePaymentAmount(RegisterUserInformation registerUser) {
+        String typeId = registerUser.getRegistrationFee();
+        if (typeId == null || typeId.isBlank()) {
+            return null;
+        }
+        try {
+            RegistrationType type = registrationTypeMapper.selectById(Long.parseLong(typeId.trim()));
+            if (type == null) {
+                return null;
+            }
+            LocalDateTime now = LocalDateTime.now();
+            String amount;
+            if (type.getNormalValidDate() != null && now.isAfter(type.getNormalValidDate())) {
+                // 超过常规有效期，取截止金额
+                amount = type.getDeadlineAmount();
+            } else {
+                // 常规期内，取常规金额
+                amount = type.getNormalAmount();
+            }
+            if (amount == null || amount.isBlank()) {
+                return null;
+            }
+            // 去千分位逗号（"1,000" → "1000"）
+            return amount.replace(",", "").trim();
+        } catch (NumberFormatException e) {
+            log.warn("registration_fee 不是数字类型ID，无法计算应付金额: {}", typeId);
+            return null;
+        }
     }
 
     private boolean isImageFile(String filename) {

@@ -6,6 +6,160 @@
 
 ---
 
+## 2026-10-28
+
+### [Fix] 论文审批误拦截BUG修复（拦截条件+重发清理逻辑）
+
+- **目的：**
+  - paper_submission表email_status=0（未发送/发送中）的记录也被后端拦截，提示"已发送过审稿邮件"，无法重新审批
+  - 根因：后端拦截逻辑只查paper_submission_email表是否有记录，不区分发送状态；前端按钮按email_status显示，两端判断不一致
+  - 服务器上存在旧失败记录（邮箱拼写错误等）导致审批被永久阻塞
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaperSubmissionServiceImpl.java` — 修改（步骤2拦截条件+步骤2.1清理逻辑）
+
+- **修改逻辑：**
+  - 步骤2：拦截条件从"email表有记录即拦截"改为"email_status==2（已成功发送）才拦截"，与前端按钮显示逻辑对齐
+  - 步骤2.1：重发前清理逻辑从`ne(sendStatus, 2)`（只清理非成功记录）改为删除该投稿下所有旧记录——旧记录的review_result=0（未审）会永久阻塞"全部审完"判断
+
+- **影响范围：**
+  - 后端：论文审批可对发送失败/发送中的记录重新发送审稿邮件
+  - 服务器历史失败数据不再阻塞审批流程
+
+- **验证方式：**
+  - mvn compile编译通过
+  - 本地测试：email_status=0的记录可正常重新审批发送
+
+- **验证结果：** 成功
+
+---
+
+### [Fix] 论文审稿通过后通知邮件未发送修复（自愈机制）
+
+- **目的：**
+  - 服务器上专家审稿通过后，投稿人未收到自动发送的论文通过通知邮件
+  - 根因：submission_id=36的paper_submission_email表有3条记录，其中id=61为8月7日旧记录（邮箱拼写错误faxmai.com，send_status=2但review_result=0未审），导致`allMatch(r -> reviewResult != 0)`永远false，不触发通过率计算和通知邮件发送
+  - 步骤2.1的`ne(sendStatus, 2)`条件无法清理send_status=2的旧记录，形成永久阻塞
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaperSubmissionServiceImpl.java` — 修改（expertReview方法新增步骤4.1自愈清理）
+
+- **修改逻辑：**
+  - 步骤4.1（新增自愈机制）：审稿判断时，找出最新发送时间latestSendTime，自动清理早于latestSendTime-1小时且review_result=0（未审）的旧记录
+  - 清理后重新过滤记录列表，只保留最新一轮的记录参与"全部审完"判断
+  - 双层保障：①重发时清理所有旧记录（步骤2.1）②审稿时自愈清理过期未审记录（步骤4.1），确保任何场景下旧记录不会阻塞审稿判断
+
+- **影响范围：**
+  - 后端：专家审稿通过后，即使存在历史失败/过期未审记录，也能正常触发通过率计算和通知邮件
+  - 不影响正常审稿流程（最新一轮记录不受影响）
+
+- **验证方式：**
+  - mvn compile编译通过
+  - mvn clean package打包成功（258MB）
+  - 服务器部署后验证：审稿通过→通知邮件正常发送
+
+- **验证结果：** 代码实现完成，待服务器部署验证
+
+---
+
+### [Enhancement] 支付凭证OCR交易号/商户单号提取与展示
+
+- **目的：**
+  - 支付凭证OCR此前仅提取金额和支付时间，无法提取交易单号/商户单号，人工审核时缺少关键对账信息
+  - 管理端凭证审核详情页"交易号"标签含义不明确（用户申报 vs OCR识别），需区分展示
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/portal/util/PaymentProofUtil.java` — 修改（新增extractTradeNoFromOcrText/extractMerchantNoFromOcrText方法）
+  - `backend/src/main/java/com/youlai/boot/portal/model/entity/PaymentProof.java` — 修改（新增ocrMerchantNo字段）
+  - `backend/src/main/java/com/youlai/boot/portal/model/vo/PaymentProofPageVO.java` — 修改（新增ocrTradeNo/ocrMerchantNo VO字段）
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaymentProofServiceImpl.java` — 修改（提交流程集成交易号/商户单号提取）
+  - `backend/sql/mysql/V20261027_01__payment_proof_reconciliation.sql` — 修改（payment_proof表新增ocr_merchant_no列）
+  - `frontend/src/views/portal/paymentProof/index.vue` — 修改（"交易号"改"申报交易号"+新增OCR交易号/商户单号展示）
+
+- **修改逻辑：**
+  - PaymentProofUtil新增正则提取：交易单号匹配"交易单号"后15~32位纯数字（微信支付截图格式）；商户单号匹配"商户单号"后的单号
+  - 提交流程中OCR识别后调用提取方法，将结果存入ocr_trade_no/ocr_merchant_no字段
+  - 管理端详情页区分"申报交易号"（用户手填）和OCR识别的交易号/商户单号
+
+- **影响范围：**
+  - 后端：凭证提交时自动提取交易单号/商户单号，需执行SQL新增ocr_merchant_no列
+  - 管理端：凭证审核详情页展示OCR识别的交易号/商户单号，辅助人工对账
+
+- **验证方式：**
+  - mvn compile编译通过
+  - 管理端凭证审核详情页展示OCR交易号/商户单号
+
+- **验证结果：** 成功
+
+---
+
+### [Enhancement] 支付凭证应付金额补算
+
+- **目的：**
+  - 存量注册数据payment_amount为空（早期注册未记录应付金额），提交支付凭证时OCR金额比对缺少基准值
+  - 需在提交凭证时自动补算应付金额，确保金额比对正常工作
+
+- **涉及文件：**
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaymentProofServiceImpl.java` — 修改（提交流程新增步骤1.1补算逻辑，注入RegistrationTypeMapper）
+
+- **修改逻辑：**
+  - 步骤1.1：提交凭证时若payment_amount为空，根据注册类型和当前日期从registration_type表计算应付金额并回写
+
+- **影响范围：**
+  - 后端：存量数据提交凭证时自动补算应付金额，OCR金额比对恢复正常
+
+- **验证方式：**
+  - mvn compile编译通过
+
+- **验证结果：** 成功
+
+---
+
+### [Enhancement] 注册联系信息"组织"字段改为非必填
+
+- **目的：**
+  - 部分参会者以个人身份注册，无所属组织，强制必填导致无法提交
+
+- **涉及文件：**
+  - `webpage/src/pages/register/Contact.vue` — 修改（去掉required属性+校验规则）
+
+- **修改逻辑：**
+  - el-form-item去掉required属性
+  - 删除organization字段的required校验规则
+
+- **影响范围：**
+  - 网页端注册流程：组织字段可留空提交
+
+- **验证方式：**
+  - npm run build打包成功
+
+- **验证结果：** 成功
+
+---
+
+### [Enhancement] 网页端错误消息透传
+
+- **目的：**
+  - 网页端此前对后端返回的错误消息做了统一包装，用户看不到后端的具体错误原因（如"该投稿已发送过审稿邮件"）
+  - 需将后端返回的业务错误消息直接透传展示给用户
+
+- **涉及文件：**
+  - `webpage/src/utils/request.js` — 修改（响应拦截器错误处理）
+
+- **修改逻辑：**
+  - 响应拦截器优先使用后端返回的msg/message字段作为错误提示，不再替换为通用文案
+
+- **影响范围：**
+  - 网页端：所有API错误提示展示后端原始消息，便于用户理解具体原因
+
+- **验证方式：**
+  - npm run build打包成功
+  - 触发业务错误（如重复提交凭证）确认提示为后端原始消息
+
+- **验证结果：** 成功
+
+---
+
 ## 2026-10-27
 
 ### [Feature] 支付凭证上传 + 人工对账功能（方案B）

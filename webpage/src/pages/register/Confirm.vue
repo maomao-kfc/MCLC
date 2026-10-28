@@ -279,7 +279,7 @@ const handleSubmitProof = async () => {
     }
   } catch (e) {
     console.error('提交凭证失败：', e)
-    ElMessage.error(e?.message || e?.response?.data?.msg || t('register.uploadPicBankFail'))
+    ElMessage.error(e?.response?.data?.msg || e?.message || t('register.uploadPicBankFail'))
   } finally {
     proofSubmitting.value = false
   }

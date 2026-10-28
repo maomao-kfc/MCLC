@@ -64,6 +64,9 @@ public class PaymentProof implements Serializable {
     @TableField("ocr_trade_no")
     private String ocrTradeNo;
 
+    @TableField("ocr_merchant_no")
+    private String ocrMerchantNo;
+
     @TableField("ocr_raw_text")
     private String ocrRawText;
 

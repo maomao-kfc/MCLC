@@ -152,6 +152,46 @@ public class PaymentProofUtil {
     }
 
     /**
+     * 从 OCR 文本中提取交易单号
+     * <p>微信支付截图格式：交易单号 4200001234202610271234567890（通常20位以上纯数字）</p>
+     *
+     * @param ocrText OCR识别文本
+     * @return 交易单号，未识别返回null
+     */
+    public static String extractTradeNoFromOcrText(String ocrText) {
+        if (ocrText == null || ocrText.isBlank()) {
+            return null;
+        }
+        // 匹配"交易单号"后跟的数字串（微信交易单号15~32位纯数字，兼容OCR漏字）
+        Pattern tradeNoPattern = Pattern.compile("交易单号[:：\\s]*(\\d{15,32})");
+        Matcher m = tradeNoPattern.matcher(ocrText);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /**
+     * 从 OCR 文本中提取商户单号
+     * <p>微信支付截图格式：商户单号 字母/数字/横线组合（商户侧订单号）</p>
+     *
+     * @param ocrText OCR识别文本
+     * @return 商户单号，未识别返回null
+     */
+    public static String extractMerchantNoFromOcrText(String ocrText) {
+        if (ocrText == null || ocrText.isBlank()) {
+            return null;
+        }
+        // 匹配"商户单号"后跟的字母数字横线组合（至少6位，避免误匹配短词）
+        Pattern merchantNoPattern = Pattern.compile("商户单号[:：\\s]*([A-Za-z0-9\\-]{6,40})");
+        Matcher m = merchantNoPattern.matcher(ocrText);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /**
      * 比较两个金额是否一致（忽略格式差异，容差0.01）
      */
     public static boolean amountsMatch(String amount1, String amount2) {

@@ -200,14 +200,19 @@ public class PaperSubmissionServiceImpl extends ServiceImpl<PaperSubmissionMappe
             throw new BusinessException("论文投稿不存在");
         }
 
-        // 步骤2：检查是否已有邮件记录，防止重复发送
-        long existingCount = paperSubmissionEmailMapper.selectCount(
+        // 步骤2：防止重复发送——仅当邮件已成功发送（emailStatus=2）时拦截
+        // emailStatus=0（未发送/发送中）或1（发送失败）时允许重新发送，与前端按钮显示逻辑一致
+        if (paperSubmission.getEmailStatus() != null && paperSubmission.getEmailStatus() == 2) {
+            throw new BusinessException("该投稿已发送过审稿邮件，如需重新发送请使用重发邮件功能");
+        }
+
+        // 步骤2.1：重新发送前清理该投稿下所有旧邮件记录
+        // 重发意味着旧审稿流程作废：旧记录的review_result=0（未审）会永久阻塞"全部审完"判断，
+        // 导致专家审稿通过后不触发通知邮件（如邮箱写错导致旧记录残留的场景）
+        paperSubmissionEmailMapper.delete(
             new LambdaQueryWrapper<PaperSubmissionEmail>()
                 .eq(PaperSubmissionEmail::getSubmissionId, id)
         );
-        if (existingCount > 0) {
-            throw new BusinessException("该投稿已发送过审稿邮件，如需重新发送请使用重发邮件功能");
-        }
 
         // 步骤3：更新论文投稿的专家链接和邮件状态
         paperSubmission.setExpertUrl(form.getUrl());
@@ -348,6 +353,34 @@ public class PaperSubmissionServiceImpl extends ServiceImpl<PaperSubmissionMappe
             new LambdaQueryWrapper<PaperSubmissionEmail>()
                 .eq(PaperSubmissionEmail::getSubmissionId, submissionId)
         );
+
+        // 步骤4.1：自动清理旧的未审核记录（失败数据），只保留最新一轮的记录参与判断
+        // 场景：邮箱写错、历史残留等导致旧记录永远无人审核，会永久阻塞"全部审完"判断
+        LocalDateTime latestSendTime = allRecords.stream()
+            .map(PaperSubmissionEmail::getSendTime)
+            .filter(t -> t != null)
+            .max(LocalDateTime::compareTo)
+            .orElse(null);
+        if (latestSendTime != null) {
+            // 早于最新发送时间1小时以上且未审核的记录，视为过期失败数据
+            LocalDateTime cutoff = latestSendTime.minusHours(1);
+            List<Long> staleIds = allRecords.stream()
+                .filter(r -> (r.getReviewResult() == null || r.getReviewResult() == 0)
+                        && r.getSendTime() != null && r.getSendTime().isBefore(cutoff))
+                .map(PaperSubmissionEmail::getId)
+                .toList();
+            if (!staleIds.isEmpty()) {
+                paperSubmissionEmailMapper.delete(
+                    new LambdaQueryWrapper<PaperSubmissionEmail>()
+                        .in(PaperSubmissionEmail::getId, staleIds)
+                );
+                log.info("审稿判断：已自动清理投稿ID={}的{}条过期未审旧记录，保留最新记录参与判断",
+                        submissionId, staleIds.size());
+                allRecords = allRecords.stream()
+                    .filter(r -> !staleIds.contains(r.getId()))
+                    .toList();
+            }
+        }
 
         boolean allReviewed = allRecords.stream()
             .allMatch(r -> r.getReviewResult() != null && r.getReviewResult() != 0);
