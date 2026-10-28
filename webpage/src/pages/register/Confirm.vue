@@ -38,8 +38,8 @@
         </div>
       </div>
 
-      <!-- 付款方式：二维码+链接 -->
-      <div v-if="!totalIsZero" class="payment-section">
+      <!-- 付款方式：二维码+链接（注册未完成时显示；已提交凭证或免费场景隐藏） -->
+      <div v-if="!totalIsZero && !isRegistrationDone" class="payment-section">
         <p class="payment-tip">{{ t('register.selectPaymentMethod') }}</p>
 
         <div class="payment-qr-card">
@@ -132,10 +132,30 @@
         </div>
       </div>
 
-      <!-- 按钮组 -->
-      <div class="btn-group">
-        <el-button class="back-btn" @click="handleBack">{{ t('register.back') }}</el-button>
-        <el-button class="confirm-btn" :loading="confirmLoading" @click="handleConfirm">{{ t('register.confirmRegistration') }}</el-button>
+      <!-- 大会注册完成状态卡片（已提交凭证 或 免费场景） -->
+      <div v-if="isRegistrationDone" class="conf-done-card">
+        <div class="conf-done-icon">✅</div>
+        <div class="conf-done-title">{{ t('register.mainConfDone') }}</div>
+        <p class="conf-done-desc">
+          {{ totalIsZero ? t('register.mainConfDoneFree') : t('register.mainConfDoneProofPending') }}
+        </p>
+        <!-- 凭证审核状态（付费场景） -->
+        <div v-if="!totalIsZero && proofStatus" class="conf-done-proof-status">
+          <el-tag :type="proofStatusTagType" size="large" effect="dark">{{ proofStatusText }}</el-tag>
+          <p v-if="proofSubmitTime" class="proof-submit-time">{{ proofSubmitTime }}</p>
+        </div>
+      </div>
+
+      <!-- 其他会议（占位，大会注册完成后显示） -->
+      <div v-if="isRegistrationDone" class="other-conferences">
+        <div class="other-conferences-header">{{ t('register.otherConferences') }}</div>
+        <p class="other-conferences-tip">{{ t('register.otherConferencesTip') }}</p>
+        <div class="conference-cards">
+          <div class="conference-card" v-for="conf in placeholderConferences" :key="conf.id">
+            <div class="conference-card-name">{{ conf.name }}</div>
+            <div class="conference-card-status">{{ t('register.confComingSoon') }}</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -144,8 +164,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
-import { ElButton, ElInput, ElMessage, ElMessageBox } from 'element-plus'
+import { ElButton, ElInput, ElMessage } from 'element-plus'
 import { useRegisterStore } from '@/stores/register'
 import { useUserStore } from '@/stores/user'
 import { getDiscountConfigurationList } from '@/api/discountConfiguration'
@@ -153,7 +172,6 @@ import { checkDeductionCode } from '@/api/contribution'
 import { updateRegisterUser } from '@/api/user'
 import { submitPaymentProof, getProofStatus } from '@/api/paymentProof'
 
-const router = useRouter()
 const { t } = useI18n()
 const registerStore = useRegisterStore()
 const userStore = useUserStore()
@@ -164,7 +182,16 @@ const deductionLoading = ref(false)
 const deductionVerified = ref(registerStore.state.deductionVerified)
 const deductionMsg = ref('')
 
-const confirmLoading = ref(false)
+// 支付信息是否已写入后端（防重复写入）
+const paymentInfoSaved = ref(false)
+
+// 其他会议占位卡片（小会信息待提供后替换）
+const placeholderConferences = [
+  { id: 1, name: '小会一（名称待定）' },
+  { id: 2, name: '小会二（名称待定）' },
+  { id: 3, name: '小会三（名称待定）' },
+  { id: 4, name: '小会四（名称待定）' }
+]
 
 // ========== 支付凭证相关状态 ==========
 const proofStatus = ref(null) // null=未提交 / proof_submitted / review_passed / paid / rejected / offline_paid
@@ -274,6 +301,8 @@ const handleSubmitProof = async () => {
       proofAmount.value = ''
       proofTradeNo.value = ''
       proofRemark.value = ''
+      // 凭证提交成功后自动写入支付信息（原"确认注册"按钮职责转移至此）
+      await savePaymentInfo()
     } else {
       ElMessage.error(res.msg || t('register.uploadPicBankFail'))
     }
@@ -288,6 +317,11 @@ const handleSubmitProof = async () => {
 const totalIsZero = computed(() => {
   const price = calculatedPrice.value.finalPrice
   return price <= 0
+})
+
+// 大会注册是否完成：免费场景 或 凭证已提交（非驳回）
+const isRegistrationDone = computed(() => {
+  return totalIsZero.value || (!!proofStatus.value && proofStatus.value !== 'rejected')
 })
 
 // 根据注册类别决定支付二维码和链接
@@ -435,40 +469,25 @@ const verifyDeductionCode = async () => {
   }
 }
 
-onMounted(() => {
-  fetchDiscounts()
+onMounted(async () => {
+  await fetchDiscounts()
   fetchProofStatus()
+  // 免费场景（抵扣码全额抵扣/讲者免费）：无需支付和凭证，自动写入支付信息完成注册
+  if (totalIsZero.value) {
+    await savePaymentInfo()
+  }
 })
-
-const handleBack = () => {
-  router.push('/register/signup')
-}
 
 // 滚动到凭证上传区
 const scrollToProof = () => {
   document.getElementById('proof-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-const handleConfirm = async () => {
-  // 需付款但未提交凭证时，弹窗提醒用户先上传凭证
-  if (!totalIsZero.value && !proofStatus.value) {
-    try {
-      await ElMessageBox.confirm(
-        t('register.proofMissingConfirm'),
-        t('register.proofMissingTitle'),
-        {
-          confirmButtonText: t('register.proofGoUpload'),
-          cancelButtonText: t('register.proofSkipContinue'),
-          type: 'warning'
-        }
-      )
-      // 用户选择去上传凭证，滚动到凭证区并中止
-      scrollToProof()
-      return
-    } catch {
-      // 用户选择继续，放行
-    }
-  }
+// 写入支付信息到后端（凭证提交成功后 或 免费场景自动调用，替代原"确认注册"按钮职责）
+const savePaymentInfo = async () => {
+  if (paymentInfoSaved.value) return // 防重复写入
+  const id = userStore.registrationId
+  if (!id) return
 
   registerStore.setSignupData({
     ...registerStore.state.signup,
@@ -476,38 +495,27 @@ const handleConfirm = async () => {
   })
   updateStorePrice()
 
-  confirmLoading.value = true
   try {
-    const id = userStore.registrationId
-    if (id) {
-      const state = registerStore.state
-      const signup = state.signup
-      const isTeam = state.enroll.registerType === '1'
-      const memberCount = isTeam ? (signup.memberCount || 1) : 1
-      const res = await updateRegisterUser(id, {
-        id,
-        paymentMethod: String(state.paymentMethod || 'qr_code'),
-        picBank: state.picBank || '',
-        paymentAmount: String(signup.finalPrice || (signup.registerTypePrice || 0) * memberCount),
-        actualPayment: String((state.deductionVerified && state.deductionCode) ? 0 : ((signup.registerTypePrice || 0) * memberCount)),
-        ...(state.deductionCode ? { deductionCode: state.deductionCode } : {})
-      })
-      if (res.code !== '00000') {
-        ElMessage.error(res.msg || t('register.updateFailed'))
-        return
-      }
+    const state = registerStore.state
+    const signup = state.signup
+    const isTeam = state.enroll.registerType === '1'
+    const memberCount = isTeam ? (signup.memberCount || 1) : 1
+    const res = await updateRegisterUser(id, {
+      id,
+      paymentMethod: String(state.paymentMethod || 'qr_code'),
+      picBank: state.picBank || '',
+      paymentAmount: String(signup.finalPrice || (signup.registerTypePrice || 0) * memberCount),
+      actualPayment: String((state.deductionVerified && state.deductionCode) ? 0 : ((signup.registerTypePrice || 0) * memberCount)),
+      ...(state.deductionCode ? { deductionCode: state.deductionCode } : {})
+    })
+    if (res.code === '00000') {
+      paymentInfoSaved.value = true
+    } else {
+      console.error('写入支付信息失败：', res.msg)
     }
   } catch (e) {
-    console.error('更新支付信息失败', e)
-    ElMessage.error(e?.response?.data?.msg || e?.message || t('register.updateFailed'))
-    return
-  } finally {
-    confirmLoading.value = false
+    console.error('写入支付信息失败：', e)
   }
-
-  // 注册流程完成：回首页并清空注册数据（原"注册确认"步骤已合并至此）
-  router.push({ path: '/', query: { login: 1 } })
-  registerStore.clearRegisterData()
 }
 </script>
 
@@ -804,28 +812,101 @@ const handleConfirm = async () => {
   border-color: #00b3a4;
 }
 
-.btn-group {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 100px;
+/* ========== 大会注册完成卡片 ========== */
+.conf-done-card {
+  max-width: 480px;
+  margin: 30px auto;
+  background: #f0f9eb;
+  border: 1px solid #e1f3d8;
+  border-radius: 14px;
+  padding: 32px 28px;
+  text-align: center;
 }
 
-.back-btn,
-.confirm-btn {
-  background-color: #7d7ef4;
-  border: none;
+.conf-done-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.conf-done-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #67c23a;
+  margin-bottom: 10px;
+}
+
+.conf-done-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.conf-done-proof-status {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e1f3d8;
+}
+
+/* ========== 其他会议区域 ========== */
+.other-conferences {
+  max-width: 700px;
+  margin: 40px auto 0;
+}
+
+.other-conferences-header {
+  background-color: #009688;
   color: white;
-  padding: 12px 60px;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 10px;
+  text-align: center;
   border-radius: 8px;
+  margin-bottom: 12px;
 }
 
-.confirm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.other-conferences-tip {
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
+.conference-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
 
+.conference-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.conference-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.conference-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.conference-card-status {
+  font-size: 13px;
+  color: #e6a23c;
+  background: #fdf6ec;
+  border: 1px solid #faecd8;
+  border-radius: 6px;
+  padding: 4px 12px;
+  display: inline-block;
+}
 
 .order-table .actual {
   font-weight: 600;
@@ -853,15 +934,8 @@ const handleConfirm = async () => {
     max-width: 100%;
     padding: 16px;
   }
-  .btn-group {
-    padding: 0;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .back-btn,
-  .confirm-btn {
-    width: 100%;
-    padding: 12px 0;
+  .conference-cards {
+    grid-template-columns: 1fr;
   }
 }
 </style>

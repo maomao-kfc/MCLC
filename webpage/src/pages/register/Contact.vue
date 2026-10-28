@@ -435,7 +435,6 @@ const handleNext = async () => {
     } : null,
     teamMembers: teamMembers.value
   }
-  ElMessage.success('联系信息已保存')
   router.push('/register/signup')
 }
 </script>

@@ -160,9 +160,41 @@
 
 ---
 
+### [Refactor] 注册确认页面流程重构（凭证提交即完成+其他会议入口）
+
+- **目的：**
+  - 用户反馈：确认页面不应有"后退"和"确认注册"按钮，注册流程不应依赖人工审核才能闭环
+  - 业务背景：MCLC是大会，还有4个小会，参加小会需先完成大会注册；凭证人工核对会中断流程，用户提交凭证后应立即看到"大会注册完成"和其他会议入口，可继续报名
+  - 联系信息仅存前端store，"联系信息已保存"提示多余
+
+- **涉及文件：**
+  - `webpage/src/pages/register/Contact.vue` — 修改（删除"联系信息已保存"提示）
+  - `webpage/src/pages/register/Confirm.vue` — 重构（去掉按钮组+新增完成卡片+其他会议占位区+savePaymentInfo自动写入）
+  - `webpage/src/locales/zh.js` — 修改（新增6个中文key）
+  - `webpage/src/locales/en.js` — 修改（新增6个英文key）
+
+- **修改逻辑：**
+  - Contact.vue：handleNext删除ElMessage.success('联系信息已保存')
+  - Confirm.vue模板：payment-section的v-if增加!isRegistrationDone；删除底部"后退"+"确认注册"按钮组；新增conf-done-card（大会注册完成卡片，含免费/凭证待审两种描述+凭证状态tag）；新增other-conferences（其他会议占位区，4张卡片显示"即将开放报名"）
+  - Confirm.vue脚本：删除handleBack/handleConfirm/confirmLoading；新增paymentInfoSaved防重复标志、isRegistrationDone计算属性（totalIsZero或proofStatus非空且非rejected）、placeholderConferences占位会议数据；提取savePaymentInfo函数（写入paymentMethod/paymentAmount/actualPayment/deductionCode到后端，不跳首页不清数据）；handleSubmitProof凭证提交成功后自动调用savePaymentInfo；onMounted免费场景自动调用savePaymentInfo
+  - i18n：新增mainConfDone/mainConfDoneFree/mainConfDoneProofPending/otherConferences/otherConferencesTip/confComingSoon中英文key
+
+- **影响范围：**
+  - 网页端：注册确认页面流程闭环不再依赖人工审核，凭证提交即显示完成状态和其他会议入口
+  - 免费场景（抵扣码全额抵扣/讲者免费）自动写入支付信息完成注册
+  - 驳回场景：proofStatus='rejected'时isRegistrationDone=false，支付区重新显示，用户可重传凭证
+
+- **验证方式：**
+  - npm run build打包成功
+  - 核验Confirm.vue模板/脚本/样式完整性
+
+- **验证结果：** 成功
+
+---
+
 ## 2026-10-27
 
-### [Feature] 支付凭证上传 + 人工对账功能（方案B）
+### [Feature] 支付凭证上传 + 人工对账功能
 
 - **目的：**
   - 协会要求支付只能在其外部网站（cahpepx.kechuangfu.com）进行，MCLC系统无法自动追踪支付状态
