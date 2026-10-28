@@ -336,9 +336,10 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         String reviewerName = SecurityUtils.getUsername();
 
         if ("pass".equals(form.getAction())) {
-            // 初审通过 → 待对账确认
+            // 审核通过 → 直接确认支付成功（凭证记录标记初审通过）
             proof.setStatus("review_passed");
-            registerUser.setProofStatus("review_passed");
+            registerUser.setProofStatus("paid");
+            registerUser.setPaymentStatus("paid");
         } else if ("reject".equals(form.getAction())) {
             if (StrUtil.isBlank(form.getRejectReason())) {
                 throw new RuntimeException("驳回必须填写原因");
@@ -360,6 +361,11 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         registerUser.setProofReviewTime(LocalDateTime.now());
         registerUser.setProofReviewerId(reviewerId);
         registerUserInformationMapper.updateById(registerUser);
+
+        // 审核通过 → 通过邮件中心发送"大会注册成功"通知邮件
+        if ("pass".equals(form.getAction())) {
+            sendRegistrationSuccessEmail(registerUser);
+        }
 
         log.info("凭证审核完成: proofId={}, action={}, reviewer={}", form.getProofId(), form.getAction(), reviewerName);
     }

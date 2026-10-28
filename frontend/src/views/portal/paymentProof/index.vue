@@ -229,7 +229,7 @@ function handleResetQuery(): void {
 async function handleReview(row: any, action: "pass" | "reject"): Promise<void> {
   if (action === "pass") {
     ElMessageBox.confirm(
-      `确认通过「${row.surname}${row.name}」的支付凭证？通过后将进入对账确认环节。`,
+      `确认通过「${row.surname}${row.name}」的支付凭证？通过后该注册将标记为已支付，并向注册人发送大会注册成功邮件。`,
       "审核确认",
       { confirmButtonText: "确认通过", cancelButtonText: "取消", type: "warning" }
     ).then(async () => {

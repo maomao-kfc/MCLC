@@ -4,6 +4,6 @@ export const navItems = [
   { id: 'guests', i18nKey: 'nav.guests', path: '/guests' },
   { id: 'schedule1', i18nKey: 'nav.schedule', path: '/schedule' },
   { id: 'hotel', i18nKey: 'nav.hotel', path: '/hotel' },
-  { id: 'myRegistration', i18nKey: 'nav.myRegistration', path: '/my-registration' },
-  { id: 'faq', i18nKey: 'nav.faq', path: '/faq' }
+  { id: 'faq', i18nKey: 'nav.faq', path: '/faq' },
+  { id: 'myRegistration', i18nKey: 'nav.myRegistration', path: '/my-registration' }
 ]
