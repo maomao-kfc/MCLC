@@ -436,6 +436,7 @@ export default {
 		guests: 'Invited Speakers',
 		schedule: 'Agenda',
 		hotel: 'Venue and Hotel',
+		myRegistration: 'My Registration',
 		faq: 'FAQ',
 		preMeeting: 'Pre-Conference',
 		register: 'Registration',

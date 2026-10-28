@@ -5,10 +5,6 @@
     <div class="lang-container">
       <!-- 语言切换按钮：永远在容器的右上角，和banner右边缘完美对齐 -->
       <div class="language-bar">
-        <router-link to="/my-registration" class="my-reg-link">
-          {{ t('myRegistration.navTitle') }}
-        </router-link>
-        <span class="divider">|</span>
         <button
           :class="['lang-btn', { active: currentLang === 'en' }]"
           @click="switchLang('en')"
@@ -35,7 +31,7 @@ import { useI18n } from 'vue-i18n'
 import { useLangStore } from '@/stores/lang.js'
 import UserDropdown from '@/components/common/UserDropdown.vue'
 
-const { locale, t } = useI18n()
+const { locale } = useI18n()
 const langStore = useLangStore()
 
 // 当前语言状态
@@ -100,17 +96,5 @@ onMounted(() => {
 .divider {
   margin: 0 6px;
   color: #bdc3c7;
-}
-.my-reg-link {
-  font-size: 14px;
-  color: #009688;
-  text-decoration: none;
-  padding: 4px 6px;
-  transition: color 0.2s;
-  white-space: nowrap;
-}
-.my-reg-link:hover {
-  color: #00b3a4;
-  text-decoration: underline;
 }
 </style>

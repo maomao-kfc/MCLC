@@ -423,6 +423,7 @@ export default {
 		guests: '特邀嘉宾',
 		schedule: '会议日程',
 		hotel: '会议及住宿',
+		myRegistration: '我的注册',
 		faq: '常见问题解答',
 		preMeeting: '会前会安排',
 		register: '注册',

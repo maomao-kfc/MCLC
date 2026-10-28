@@ -228,6 +228,9 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         log.info("支付凭证提交成功: registrationId={}, proofId={}, md5={}, ocrAmount={}, amountMatch={}",
                 form.getRegistrationId(), proof.getId(), md5, ocrAmount, amountMatch);
 
+        // 12. 凭证提交成功 → 通过邮件中心发送"待核对"通知邮件
+        sendProofSubmittedEmail(registerUser);
+
         Map<String, Object> result = new HashMap<>();
         result.put("proofId", proof.getId());
         result.put("status", "proof_submitted");
@@ -388,6 +391,29 @@ public class PaymentProofServiceImpl implements PaymentProofService {
         sendRegistrationSuccessEmail(registerUser);
 
         log.info("线下支付登记: registrationId={}, operator={}, remark={}", registrationId, operatorName, remark);
+    }
+
+    /**
+     * 发送"凭证已提交待核对"通知邮件（走邮件中心，可追踪发送状态）
+     */
+    private void sendProofSubmittedEmail(RegisterUserInformation registerUser) {
+        if (StrUtil.isBlank(registerUser.getEmail())) return;
+        try {
+            EmailTemplateForm templateForm = emailTemplateService.getEmailTemplateForm("注册待核对模板");
+            String content = templateForm.getEmailContent()
+                    .replace("{{name1}}", registerUser.getName() + " " + registerUser.getSurname());
+            mailSendRecordService.createAndSend(
+                    MailBusinessType.USER_REGISTER,
+                    registerUser.getId(),
+                    registerUser.getEmail(),
+                    registerUser.getName() + " " + registerUser.getSurname(),
+                    "MCLC注册凭证已提交，待核对",
+                    content
+            );
+            log.info("凭证提交待核对通知邮件已发送：registrationId={}, email={}", registerUser.getId(), registerUser.getEmail());
+        } catch (Exception e) {
+            log.error("发送凭证提交待核对邮件失败：registrationId={}, error={}", registerUser.getId(), e.getMessage());
+        }
     }
 
     /**

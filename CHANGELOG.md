@@ -8,6 +8,38 @@
 
 ## 2026-10-28
 
+### [Feature] 导航栏新增"我的注册"入口+凭证提交后发待核对邮件
+
+- **目的：**
+  - "我的注册"入口从顶部语言栏移到主导航栏（首页/特邀嘉宾/会议日程/会议及住宿同级），更显眼易找
+  - 用户提交支付凭证后无感知，需发第一封邮件告知"已注册成功，待工作人员核对支付信息"
+  - 管理端核对成功（对账确认/线下登记）后发第二封邮件引导到"我的注册"页面（上轮已实现，本轮保持）
+
+- **涉及文件：**
+  - `webpage/src/data/nav.js` — 导航菜单新增myRegistration项（hotel后faq前）
+  - `webpage/src/locales/zh.js` / `webpage/src/locales/en.js` — nav命名空间新增myRegistration key
+  - `webpage/src/components/common/HeaderLang.vue` — 移除顶部语言栏的"我的注册"入口及样式
+  - `backend/src/main/java/com/youlai/boot/portal/service/impl/PaymentProofServiceImpl.java` — submitProof第12步新增sendProofSubmittedEmail调用+私有方法
+  - `sys_email_template表` — 新增"注册待核对模板"(id=7)
+
+- **修改逻辑：**
+  - 导航入口：navItems数组新增{id:'myRegistration', i18nKey:'nav.myRegistration', path:'/my-registration'}，NavBar.vue数据驱动自动渲染
+  - 两封邮件机制：第一封在submitProof凭证提交成功后发（注册待核对模板，"MCLC注册凭证已提交，待核对"）；第二封在confirmMatch/offlineRegister核对成功后发（注册通过模板，"MCLC大会注册成功"，引导到我的注册页面）
+  - 两封邮件均走mailSendRecordService.createAndSend(USER_REGISTER,...)邮件中心可追踪
+
+- **影响范围：**
+  - 前端：主导航栏新增"我的注册"按钮；顶部语言栏恢复纯语言切换
+  - 后端：用户提交凭证后立即收到待核对通知邮件
+  - 数据库：sys_email_template新增"注册待核对模板"
+
+- **验证方式：**
+  - mvn compile编译通过
+  - npm run build编译通过
+
+- **验证结果：** 成功
+
+---
+
 ### [Feature] 注册成功判定与用户回访机制（我的注册页面+邮件中心通知）
 
 - **目的：**
