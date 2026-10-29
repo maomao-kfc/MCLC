@@ -2,6 +2,19 @@
 
 > 会议注册全流程：前端6步向导(Enroll→Consent→Contact→Signup→Confirm→Final) + 后端审核→支付→签到
 > 含团队注册、签证信息、账单信息、抵扣码双重验证、Pinia状态管理
+>
+> **最后更新**: 2026-10-29
+
+## 更新日志（2026-08-14 后变更）
+
+| 变更 | 说明 | 关联文档 |
+|------|------|----------|
+| 注册确认页面流程重构 | 从"提交即完成"改为"提交→确认→凭证上传"分步确认流程 | - |
+| 注册成功判定+通知机制重构 | 注册成功不再自动判定，改为三种显式触发（凭证审核通过/对账确认/线下登记） | [13-payment-subsystem.md](13-payment-subsystem.md) |
+| 两封邮件机制 | 凭证提交→第一封"待核对"(id=7)；审核通过→第二封"注册通过"(id=6) | [12-email-lifecycle.md](12-email-lifecycle.md) |
+| "我的注册"入口迁移 | 从 HeaderLang（语言切换区域）移到主导航栏，提升可见性 | - |
+| 支付时间手动填写 | 支付时间从自动取当前时间改为用户手动填写+日期选择器（中英文适配） | - |
+| i18n中英文key补全 | 注册流程相关的前端中英文翻译key全部写入 | [19-i18n-strategy.md](19-i18n-strategy.md) |
 
 ## 1. 业务流程总览
 
@@ -667,7 +680,7 @@ register_user_information
 
 ### 14.2 审核通过但未收到邮件
 1. 检查用户email字段是否为空
-2. 检查邮件子系统状态（参见05-email-subsystem.md）
+2. 检查邮件子系统状态（参见14-email-subsystem.md）
 3. 检查mail_send_record表中对应记录的send_status
 4. **SQL**: `SELECT * FROM mail_send_record WHERE receiver = ? ORDER BY create_time DESC LIMIT 5`
 
@@ -699,3 +712,44 @@ register_user_information
 1. Survey.vue未纳入路由stepOrder，用户无法填写问卷
 2. registerFormMapper.js中有survey字段映射，但数据源始终为空对象
 3. 10个问卷字段(registrationCategory/gender/occupation等)在Form中存在但永远为空
+
+## 15. 2026-08-14 后新增功能
+
+### 15.1 注册确认页面流程重构
+
+原始流程：前端6步向导最后一步(Final)提交后即完成注册。重构后：
+
+```
+6步向导完成 → 进入确认页面（Confirm Review）
+  → 用户确认信息 → 提交注册
+  → 跳转凭证上传页面（支付凭证）
+  → 上传凭证 → 发送第一封"待核对"邮件
+  → 等待管理员审核/对账确认
+  → 审核通过 → payment_status=paid → 发送第二封"注册通过"邮件
+```
+
+### 15.2 三种注册成功触发方式
+
+注册成功（payment_status 变为 paid/offline_paid）不再自动判定，改为三种显式触发：
+
+| 触发方式 | 入口 | payment_status | 说明 |
+|----------|------|----------------|------|
+| 凭证审核通过 | 管理端 reviewProof(pass) | paid | 用户上传凭证→OCR初筛→管理员审核 |
+| 对账确认匹配 | 管理端 confirmMatch | paid | 银行流水Excel导入→匹配引擎→人工确认 |
+| 线下登记 | 管理端 offlineRegister | offline_paid | 管理员直接登记线下付款用户 |
+
+三种触发方式均通过 `sendRegistrationSuccessEmail()` 发送"注册通过"邮件（模板id=6，变量{{name1}}）。
+
+### 15.3 "我的注册"入口
+
+- **原始位置**：HeaderLang 组件内（与语言切换按钮并列，可见性差）
+- **当前位置**：主导航栏（navItems 数组末尾，faq 之后）
+- **路由**：`/my-registration`
+- **配置文件**：`webpage/src/data/nav.js`
+
+### 15.4 支付时间手动填写
+
+凭证上传表单中，支付时间从自动填充 `LocalDateTime.now()` 改为用户手动选择：
+
+- 前端：Element Plus DatePicker，中英文环境格式适配（yyyy-MM-dd / MM/dd/yyyy）
+- 后端：接收用户填写的支付时间字段，用于对账时间维度匹配（±1天20分/±3天10分/±7天10分）

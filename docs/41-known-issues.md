@@ -228,16 +228,16 @@
 - **位置**: `mail_send_record.send_status`
 - **描述**: 9个发送状态+4个投递状态的完整转换规则仅存在于代码中
 - **影响**: 新人理解成本高，容易引入状态转换bug
-- **建议**: 在05-email-subsystem.md中补充完整状态转换表
+- **建议**: 在14-email-subsystem.md中补充完整状态转换表
 - **优先级**: P1
-- **状态**: ✅ 已在05-email-subsystem.md中补充
+- **状态**: ✅ 已在14-email-subsystem.md中补充
 
 ### ARCH-002: i18n双轨策略缺少实现规范
 
 - **位置**: portal_*行级 vs meeting_*列级
 - **描述**: 两种i18n策略的实现细节（查询方式、降级策略、前端适配）未形成规范文档
 - **影响**: 新功能开发时i18n实现不一致
-- **建议**: 在04-i18n-strategy.md中补充实现规范
+- **建议**: 在19-i18n-strategy.md中补充实现规范
 - **优先级**: P2
 
 ### ARCH-003: 支付回调缺少幂等性保障文档
@@ -245,9 +245,9 @@
 - **位置**: 支付回调Controller
 - **描述**: Stripe/微信/支付宝的回调处理缺少幂等性设计文档
 - **影响**: 网络重试可能导致重复处理
-- **建议**: 在06-payment-subsystem.md中补充幂等性设计
+- **建议**: 在13-payment-subsystem.md中补充幂等性设计
 - **优先级**: P1
-- **状态**: ✅ 已在06-payment-subsystem.md第11节补充
+- **状态**: ✅ 已在13-payment-subsystem.md第11节补充
 
 ### ARCH-004: 支付回调Controller缺少事务保护
 

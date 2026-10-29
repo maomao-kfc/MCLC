@@ -197,7 +197,7 @@ CodegenServiceImpl
 
 ### 4.4 状态机模式 — 邮件发送
 
-详见 [docs/05-email-subsystem.md](05-email-subsystem.md)
+详见 [docs/14-email-subsystem.md](14-email-subsystem.md)
 
 ```
 MailSendStatus (9状态):

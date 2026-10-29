@@ -4,6 +4,20 @@
 >
 > **增强记录**：基于源码精确分析，修正回调端点URL、补充双路径回调架构、4个Provider方法级分解、
 > 幂等性分析、签名验证流程、订单号生成规则、退款流程对比
+>
+> **最后更新**: 2026-10-29
+
+## 更新日志（2026-08-14 后变更）
+
+| 变更 | 说明 | 关联文档 |
+|------|------|----------|
+| 凭证审核流程 | 用户上传支付凭证→OCR初筛→管理员审核→审核通过即确认支付成功 | [10-payment-proof-flow.md](10-payment-proof-flow.md) |
+| 对账系统 | Excel导入银行流水→多维度匹配引擎（姓名30/手机25/金额25/时间20，阈值60）→人工确认 | [11-reconciliation-flow.md](11-reconciliation-flow.md) |
+| 两封邮件机制 | 凭证提交发第一封"待核对"邮件(id=7)；审核通过/对账确认/线下登记发第二封"注册通过"邮件(id=6) | [12-email-lifecycle.md](12-email-lifecycle.md) |
+| 三种注册成功触发 | reviewProof pass→paid / confirmMatch→paid / offlineRegister→offline_paid，均发第二封邮件 | [15-registration-workflow.md](15-registration-workflow.md) |
+| 支付时间手动填写 | 支付时间不再自动取当前时间，改为用户手动填写+日期选择器（中英文适配） | - |
+| 应付金额补算 | 根据注册类型+团购折扣自动计算应付金额 | - |
+| 交易号提取 | 凭证OCR提取交易号，辅助对账匹配 | - |
 
 ## 1. 架构总览
 
@@ -941,3 +955,53 @@ HAVING cnt > 1;
 | PAY-004 | 🟡中 | 订单号使用timestamp生成，高并发下可能冲突 | WechatPaymentProvider:55, AlipayPaymentProvider:45 |
 | PAY-005 | 🟢低 | PaymentService.handleAlipayNotify/handleWechatNotify未被Controller调用(冗余方法) | PaymentServiceImpl:172, :182 |
 | PAY-006 | 🟢低 | 支付宝验签使用X509EncodedKeySpec，公钥格式可能不兼容 | AlipayPaymentProvider:196-206 |
+
+## 14. 凭证审核与对账（2026-08-14 后新增）
+
+> 详细链路请参考 [10-payment-proof-flow.md](10-payment-proof-flow.md) 和 [11-reconciliation-flow.md](11-reconciliation-flow.md)
+
+### 14.1 凭证审核流程
+
+原始支付系统仅覆盖在线支付（Stripe/微信/支付宝），银行转账用户无法在线确认。凭证审核流程解决了这一问题：
+
+```
+用户上传支付凭证（截图/照片）
+  → OCR初筛（TesseractOcrServiceImpl, PSM 11稀疏文本模式）
+  → 水印叠加 + MD5/dHash去重
+  → 管理员审核（reviewProof）
+  → 审核通过 → proof_status=review_passed → payment_status=paid
+  → 自动发送"注册通过"邮件（模板id=6）
+```
+
+**关键设计**：
+- OCR三级降级：@PostConstruct探测tessdata路径→available标志运行时跳过→catch(Throwable)兜底JNA Error
+- 审核通过即确认支付成功，无需额外操作
+- 凭证提交时发送第一封"待核对"邮件（模板id=7）
+
+### 14.2 对账系统
+
+```
+管理员导入银行流水Excel
+  → 创建对账批次（batchNo=RC+时间戳）
+  → 加载候选记录（proof_submitted/review_passed状态）
+  → 多维度匹配引擎逐条评分：
+      姓名30分（完全匹配/去空格/包含）
+      手机25分（normalizePhone归一化）
+      金额25分（BigDecimal清洗后比对）
+      时间20分（±1天20分/±3天10分/±7天10分）
+  → 总分≥60 → auto_matched
+  → 总分<60 → unmatched（人工处理）
+  → 人工confirmMatch → payment_status=paid + 发送"注册通过"邮件
+```
+
+### 14.3 三种注册成功触发方式
+
+| 触发方式 | 入口 | payment_status | 邮件 |
+|----------|------|----------------|------|
+| 凭证审核通过 | reviewProof(pass) | paid | 注册通过模板(id=6) |
+| 对账确认匹配 | confirmMatch | paid | 注册通过模板(id=6) |
+| 线下登记 | offlineRegister | offline_paid | 注册通过模板(id=6) |
+
+### 14.4 支付时间手动填写
+
+支付时间不再自动取当前时间（`LocalDateTime.now()`），改为用户在凭证提交表单中手动填写，前端使用日期选择器（Element Plus DatePicker），中英文环境下格式适配（yyyy-MM-dd / MM/dd/yyyy）。

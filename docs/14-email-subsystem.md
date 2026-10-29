@@ -1,6 +1,19 @@
 # MCLC 邮件子系统技术文档
 
 > 最复杂的子系统，包含9状态状态机、IMAP退信检测、RFC3464 DSN解析、自动重试链、退信黑名单
+>
+> **最后更新**: 2026-10-29
+
+## 更新日志（2026-08-14 后变更）
+
+| 变更 | 说明 | 关联文档 |
+|------|------|----------|
+| 父子重试模型 | mail_send_record 新增 record_type(ORIGINAL/RETRY) / retry_sequence / root_record_id 三列 + uk_root_retry 唯一约束 | [12-email-lifecycle.md](12-email-lifecycle.md) |
+| 步骤2.5黑名单检查 | createAndSend 流程新增步骤2.5：发送前检查收件人是否在退信黑名单中，拦截发送 | - |
+| 步骤4.1自愈机制 | 发送失败时的自愈处理逻辑 | - |
+| 两封邮件机制 | 凭证提交→第一封"待核对"(模板id=7)；审核通过/对账确认/线下登记→第二封"注册通过"(模板id=6) | [12-email-lifecycle.md](12-email-lifecycle.md) |
+| 数据库缺列故障 | 代码升级重试模型但数据库未同步，ALTER TABLE 补齐三列修复 | [20-case-email-record-type-missing.md](20-case-email-record-type-missing.md) |
+| 论文通过邮件修复 | 服务器上论文审核通过后邮件未发送，修复发送条件判断 | [16-paper-submission.md](16-paper-submission.md) |
 
 ## 1. 架构总览
 
@@ -775,3 +788,45 @@ spring:
 2. 检查 `auto-resend-max-count`: 是否已达上限
 3. 检查黑名单: 临时退信不应加入黑名单（只有永久退信才加）
 4. 检查 `mail_send_record.retry_count`: 是否超过限制
+
+## 14. 2026-08-14 后新增功能
+
+> 详细链路请参考 [12-email-lifecycle.md](12-email-lifecycle.md)
+
+### 14.1 父子重试模型
+
+原始设计重试时直接覆盖原始记录的 retry_count，无法保留完整发送历史。升级为父子重试模型：
+
+| 字段 | 说明 |
+|------|------|
+| record_type | ORIGINAL（原始记录）/ RETRY（重试子记录） |
+| retry_sequence | 重试序号（1, 2, ...） |
+| root_record_id | 指向原始记录 ID（RETRY 记录才有） |
+| uk_root_retry | 唯一约束（root_record_id + retry_sequence），防止重复重试 |
+
+**分页查询**：一级列表只查 ORIGINAL 记录，批量查询其 RETRY 子记录组装树形结构（children）。
+
+**故障记录**：2026-10 部署时数据库未同步三列，导致邮件中心报错，通过 ALTER TABLE 补齐修复（详见 [20-case-email-record-type-missing.md](20-case-email-record-type-missing.md)）。
+
+### 14.2 两封邮件机制
+
+注册流程中的邮件通知从单封升级为两封：
+
+| 邮件 | 触发时机 | 模板 | 变量 |
+|------|----------|------|------|
+| 第一封：待核对 | 用户提交支付凭证后 | 注册待核对模板(id=7) | {{name1}} |
+| 第二封：注册通过 | 凭证审核通过 / 对账确认匹配 / 线下登记 | 注册通过模板(id=6) | {{name1}} |
+
+**发送方式**：通过 `MailSendRecordServiceImpl.createAndSend()` 统一入口，business_type=USER_REGISTER。
+
+### 14.3 黑名单拦截（步骤2.5）
+
+createAndSend 流程在"插入数据库"（步骤2）和"SMTP发送"（步骤3）之间新增步骤2.5：
+
+```
+步骤2.5: 查询 mail_bounce_blacklist
+  → 收件人在黑名单中 → status=FAILED, errorMessage="收件地址在退信黑名单中，已拦截发送"
+  → 不在黑名单 → 继续步骤3
+```
+
+**设计理由**：避免向已知无效地址反复发送，保护发件域名信誉，减少SMTP资源浪费。
