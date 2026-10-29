@@ -6,6 +6,38 @@
 
 ---
 
+## 2026-10-29
+
+### [Enhancement] 项目知识库建设完成+docs目录整理重组
+
+- **目的：**
+  - 建立完整项目知识库：功能链路文档、故障案例库、面试题库、简历素材、学习指南、术语表、词汇表
+  - docs目录整理：统一编号、拍平子目录、删除重复文件、更新旧文档
+
+- **新增文档（17篇）：**
+  - `docs/README.md` — 文档使用手册（文档地图/报错排查路径/场景阅读顺序）
+  - `docs/10-payment-proof-flow.md` — 凭证审核全链路
+  - `docs/11-reconciliation-flow.md` — 对账匹配全链路
+  - `docs/12-email-lifecycle.md` — 邮件9态状态机+退信检测+父子重试
+  - `docs/20~24-case-*.md` — 5篇真实故障案例（缺列/OCR JNA/审核未确认/权限type=B/SMTP≠投递）
+  - `docs/30~32-interview-*.md` — 3篇面试题库（邮件/支付/架构，共18题）
+  - `docs/33-resume-materials.md` — 简历素材（定位模板/STAR故事/量化数据）
+  - `docs/40-learning-guide.md` — 五阶段学习路线
+  - `docs/42-glossary.md` — 42个术语表
+  - `docs/43-phase1-scan-report.md` — Phase 1全项目扫描报告
+  - `docs/44-vocabulary.md` — 约330词英语词汇表（中文近音标注+中译+项目示例）
+
+- **目录整理：**
+  - 删除7个重复旧文件（01-project-overview/phase1-analysis-report/email-case-study/fault-cases/interview-questions/旧版learning-guide/旧版resume-materials）
+  - 子目录拍平到根目录（features/→10-12, case-studies/→20-24, interview/→30-32, career/→33, learning/→40）
+  - 统一编号：00-09总览架构/10-19功能链路/20-29故障案例/30-39面试简历/40-49学习参考
+  - 4个旧文档（13/14/15/16）更新：补充2026-08-14后变更（凭证审核/对账/两封邮件/三种触发/审批修复等）
+  - 修复全库17处旧文件名交叉引用为新编号
+
+- **提交：** cf76d00
+
+---
+
 ## 2026-10-28
 
 ### [Feature] 导航栏新增"我的注册"入口+凭证提交后发待核对邮件
